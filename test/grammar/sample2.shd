@@ -1,0 +1,22 @@
+var res = array.create();
+var pendingRes = array.create();
+shell.nodes.each( 
+	{
+	    var f = future.create();
+		arg.asyncExecuteScript(
+		   {
+		        return sys.ls();
+		   }, f);
+		pendingRes.add(f);
+	});
+pendingRes.waitForResult(); // require? value() can block
+var res = array.create();
+pendingRes.each(
+{
+	var v = arg.value();
+	res.merge(v);
+});
+	
+var table = page.createTable(res);	
+page.scrollpanel.add(table);
+
