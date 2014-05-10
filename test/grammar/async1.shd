@@ -7,8 +7,8 @@ shell.nodes.each(
 		   {
 		        return sys.ls();
 		   }, f);
-		args.pendingResult.add(f);
-	}, pendingResult);
+		pendingRes.add(f);
+	});
 pendingRes.waitForResult(); // require? value() can block
 var res = array.create();
 pendingRes.each(

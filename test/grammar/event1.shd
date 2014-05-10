@@ -1,0 +1,36 @@
+var folder = args.get(0);
+job.shell.nodes.each( 
+	async {
+		var folder = args.folder;
+		args.node.post("script.exec",
+		 async  {
+		        var list = sys.ls(args.folder);
+				job.post("node.list", list);
+		   }, folder);
+	}, folder);
+job.store.allLists.init("list");
+job.on("node.list", 
+async {
+	var length = job.store.allLists.add(args.list);
+	if(length ==  args.job.shell.nodes.length)
+	{
+		job.post("all.list");
+	}
+}, job.shell.nodes.length);
+
+job.on("all.list",
+async {
+	var allLists = job.store.allLists;
+	var header = job.store.listHeader;
+	var table = page.createTable(allLists, header);
+	table.row.addMenu("View Subfolder", "view.subfolder");
+	job.on("view.subfolder", {
+		job.restart(args.row.folder);
+	});
+	page.stack.add("folder.list", table);
+	page.stack.refresh("folder.list");
+});
+
+page.cmdline.on("cmd",
+{
+});

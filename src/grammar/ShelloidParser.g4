@@ -22,9 +22,8 @@ expr: objExprSeq | LP expr RP | literal |
       expr op=PLUS expr | expr op=MINUS expr | expr op=EQUALS expr |      
       expr op=LT expr | expr op=GT expr | expr op=LTE expr |      
       expr op=GTE expr | expr op=NEQ expr |
-      expr op=AND expr | expr op=OR expr | LC script RC
+      expr op=AND expr | expr op=OR expr | ASYNC? LC script RC
       ;
-
 objExpr: ID methodCall?;
 objExprSeq: objExpr (DOT objExpr)*;
 

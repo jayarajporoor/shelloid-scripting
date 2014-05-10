@@ -1,0 +1,12 @@
+var res = array.create();
+var tmp = shell.nodes.extras;
+shell.nodes.each( 
+	{
+		var r = arg.executeScript(
+		   {
+		        return sys.ls;
+		   });
+		res.merge(r);
+	});
+var table = page.createTable(res);	
+page.scrollpanel.add(table);

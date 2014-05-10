@@ -32,6 +32,7 @@ LTE : '<=';
 NEQ  : '!=';
 DOT : '.';
 RETURN: 'return';
+ASYNC: 'async';
 ID:  (LETTER) (LETTER | DIGIT | '-' | '?' | '!')*;
 WS : [ \r\n\t]+ -> skip;
 COMMENT : (('/*' .*? '*/') | ('//' .*? '\n')) -> skip;
