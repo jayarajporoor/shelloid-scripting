@@ -3,7 +3,7 @@ job.shell.nodes.each(
 	async {
 		var folder = args.folder;
 		args.node.post("script.exec",
-		 async  {
+		 async {
 		        var list = sys.ls(args.folder);
 				job.post("node.list", list);
 		   }, folder);
@@ -12,10 +12,11 @@ job.store.allLists.init("list");
 job.on("node.list", 
 async {
 	var length = job.store.allLists.add(args.list);
-	if(length ==  args.job.shell.nodes.length)
-	{
-		job.post("all.list");
-	}
+	if( length ==  args.job.shell.nodes.length, 
+		{
+			job.post("all.list");
+		}
+	);
 }, job.shell.nodes.length);
 
 job.on("all.list",
