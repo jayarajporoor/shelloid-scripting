@@ -1,0 +1,17 @@
+button.on("click", 
+async {
+     shell.node.post("script.exec", (
+	   async {
+			gpio.on(1);
+		}	   
+	 );
+});
+
+shell.node.post("script.periodic", 1000,
+async {
+    var n = gpio.get(1);
+	job.post("sensor.data", n);
+});
+
+job.on("sensor.data", {
+});
