@@ -21,8 +21,10 @@ import com.shelloid.script.parser.ShelloidParser.StmtContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.ListIterator;
+import java.util.Set;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -36,7 +38,8 @@ import org.antlr.v4.runtime.Token;
 public class Compiler {
     ArrayList<String> errorMsgs = new ArrayList();
     
-    public ScriptBin compile(ScriptSource src) throws IOException, CompilerException
+    public ScriptBin compile(ScriptSource src, HashMap<String, ShelloidObject> globals) 
+                                        throws IOException, CompilerException
     {
         InputStream is = src.getInputStream();
         ShelloidLexer lexer = new ShelloidLexer(new ANTLRInputStream(is));
@@ -47,7 +50,8 @@ public class Compiler {
         if(errorMsgs.isEmpty())
         {
             ScriptBin bin = new ScriptBin();            
-            CompiledScript cscript = translateScript(script, false, bin);
+            CompileCtx ctx = new CompileCtx(bin, false, globals, null);
+            CompiledScript cscript = translateScript(script, ctx);
             bin.setScript(cscript);
             bin.setSrc(src);
             return bin;
@@ -57,7 +61,7 @@ public class Compiler {
         }
     }
     
-    CompiledScript translateScript(ScriptContext script, boolean isAsync, ScriptBin bin)
+    CompiledScript translateScript(ScriptContext script, CompileCtx ctx)
     {
         CompiledScript cscript = new CompiledScript(
                                         new SourceCtx(script.start, script.stop)
@@ -66,15 +70,15 @@ public class Compiler {
         while(it.hasNext())
         {
             StmtContext stmt = it.next();
-            CompiledStmt cstmt = translateStmt(stmt, bin);
+            CompiledStmt cstmt = translateStmt(stmt, ctx);
             cscript.addStmt(cstmt);
         }
         return cscript;
     }
     
-    CompiledStmt translateStmt(StmtContext stmt, ScriptBin bin)
+    CompiledStmt translateStmt(StmtContext stmt, CompileCtx ctx)
     {
-        CompiledStmt cstmt = new CompiledStmt( new SourceCtx(stmt.start, stmt.stop));
+        CompiledStmt cstmt = new CompiledStmt( new SourceCtx(stmt.start, stmt.stop));        
         AssignStmtContext assignStmt = stmt.assignStmt();
         DeclStmtContext   declStmt   = stmt.declStmt();
         ExprStmtContext   exprStmt   = stmt.exprStmt();
@@ -82,14 +86,29 @@ public class Compiler {
         if(assignStmt != null)
         {
             cstmt.kind = CompiledStmt.StmtKind.ASSIGN_STMT;            
-            cstmt.id = assignStmt.ID().getText();
+            cstmt.id = assignStmt.ID().getText();            
             expr = assignStmt.expr();            
+            if(!ctx.varIsDefined(cstmt.id) && !ctx.isGlobal(cstmt.id))
+            {
+                compileError(assignStmt.ID().getSymbol(), "Undefined variable.");
+            }
         }else
         if(declStmt != null)
         {
             cstmt.kind = CompiledStmt.StmtKind.DECL_STMT;            
             cstmt.id = assignStmt.ID().getText();
             expr = assignStmt.expr();
+            if(ctx.isGlobal(cstmt.id))
+            {
+                compileError(assignStmt.ID().getSymbol(), "Attempt to redefine global");
+            }else
+            if(ctx.hasVar(cstmt.id))
+            {
+                compileError(assignStmt.ID().getSymbol(), "Variable is already defined.");
+            }else
+            {
+                ctx.addVar(cstmt.id);  
+            }
         }else
         if(exprStmt != null)
         {
@@ -99,30 +118,31 @@ public class Compiler {
         
         if(expr != null)
         {
-            CompiledExpr cexpr = translateExpr(expr, bin);
+            CompiledExpr cexpr = translateExpr(expr, ctx);
             cstmt.expr = cexpr;
         }
         return null;
     }        
         
-    CompiledExpr translateExpr(ExprContext expr, ScriptBin bin)
+    CompiledExpr translateExpr(ExprContext expr, CompileCtx ctx)
     {
         if(expr.objExprSeq() != null)
         {
-            return translateObjExprSeq(expr.objExprSeq(), bin);
+            return translateObjExprSeq(expr.objExprSeq(), ctx);
         }else
         if(expr.literal() != null)
         {
-            return translateLiteral(expr.literal(), bin);
+            return translateLiteral(expr.literal(), ctx);
         }else
         if(expr.script() != null)
         {
             CompiledExpr cexpr = new CompiledExpr(new SourceCtx(expr.start, expr.stop));            
             boolean isAsync = (expr.ASYNC() != null);
-            CompiledScript cscript = translateScript(expr.script(), isAsync, bin);
+            CompileCtx newCtx = new CompileCtx(ctx.bin, isAsync, ctx.globals, ctx);
+            CompiledScript cscript = translateScript(expr.script(), newCtx);
             if(isAsync)
             {
-                ArrayList<CompiledScript> asyncs = bin.getAsyncs();
+                ArrayList<CompiledScript> asyncs = ctx.bin.getAsyncs();
                 int index = asyncs.size(); //must do before calling add(...)
                 asyncs.add(cscript);
                 cexpr.kind = CompiledExpr.ExprKind.ASYNC_INDEX_EXPR;
@@ -139,25 +159,34 @@ public class Compiler {
             CompiledExpr cexpr = new CompiledExpr(new SourceCtx(expr.start, expr.stop));            
             cexpr.kind = CompiledExpr.ExprKind.OP_EXPR;
             cexpr.op = expr.op.getText();
-            cexpr.lexpr = translateExpr(expr.expr(0), bin);
+            cexpr.lexpr = translateExpr(expr.expr(0), ctx);
             if(expr.expr().size() > 1)
-                cexpr.rexpr = translateExpr(expr.expr(1), bin);
+                cexpr.rexpr = translateExpr(expr.expr(1), ctx);
             return cexpr;
         }
     }
     
-    CompiledExpr translateObjExprSeq(ObjExprSeqContext objExprSeq, ScriptBin bin)
+    CompiledExpr translateObjExprSeq(ObjExprSeqContext objExprSeq, CompileCtx ctx)
     {
         CompiledExpr cexpr = new CompiledExpr(
                                 new SourceCtx(objExprSeq.start, objExprSeq.stop)
                             );
         Iterator<ObjExprContext> it = objExprSeq.objExpr().iterator();
         ArrayList<CompiledObjExpr> cObjExprs = new ArrayList<CompiledObjExpr>();
+        boolean rootVar = true;
         while(it.hasNext())
         {
             ObjExprContext objExpr = it.next();
-            CompiledObjExpr cobjExpr = translateObjExpr(objExpr, bin);
+            CompiledObjExpr cobjExpr = translateObjExpr(objExpr, ctx);
             cObjExprs.add(cobjExpr);
+            if(rootVar && cobjExpr.kind == CompiledObjExpr.ObjExprKind.OBJ_REF)
+            {
+                if(!ctx.varIsDefined(cobjExpr.id) && !ctx.isGlobal(cobjExpr.id))
+                {
+                    compileError(objExpr.ID().getSymbol(), "Undefined variable.");
+                }                         
+            }
+            rootVar = false;
         }
         cexpr.kind = CompiledExpr.ExprKind.OBJ_EXPR_SEQ;
         cexpr.value = cObjExprs;
@@ -165,7 +194,7 @@ public class Compiler {
         return cexpr;
     }
     
-    CompiledObjExpr translateObjExpr(ObjExprContext objExpr, ScriptBin bin)
+    CompiledObjExpr translateObjExpr(ObjExprContext objExpr, CompileCtx ctx)
     {
         CompiledObjExpr cobjExpr = new CompiledObjExpr(
                                         new SourceCtx(objExpr.start, objExpr.stop)
@@ -183,10 +212,11 @@ public class Compiler {
             {
                 ArrayList<CompiledExpr> cparams = new ArrayList<CompiledExpr>();
                 Iterator<ExprContext> it = paramList.expr().iterator();
+                boolean rootVar = true;
                 while(it.hasNext())
                 {
                     ExprContext expr = it.next();
-                    cparams.add(translateExpr(expr, bin));
+                    cparams.add(translateExpr(expr, ctx));
                 }
                 cobjExpr.params = cparams;
             }
@@ -194,7 +224,7 @@ public class Compiler {
         return cobjExpr;
     }
     
-    CompiledExpr translateLiteral(LiteralContext literal, ScriptBin bin)
+    CompiledExpr translateLiteral(LiteralContext literal, CompileCtx ctx)
     {
         CompiledExpr cexpr = new CompiledExpr(new SourceCtx(literal.start, literal.stop));
         cexpr.kind = CompiledExpr.ExprKind.LITERAL_EXPR;
