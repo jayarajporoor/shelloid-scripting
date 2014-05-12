@@ -88,7 +88,8 @@ public class Compiler {
             cstmt.kind = CompiledStmt.StmtKind.ASSIGN_STMT;            
             cstmt.id = assignStmt.ID().getText();            
             expr = assignStmt.expr();            
-            if(!ctx.varIsDefined(cstmt.id) && !ctx.isGlobal(cstmt.id))
+            if(!ctx.varIsDefined(cstmt.id) && !ctx.isGlobal(cstmt.id) && 
+                    !ctx.isBuiltin(cstmt.id))
             {
                 compileError(assignStmt.ID().getSymbol(), "Undefined variable.");
             }
@@ -98,9 +99,9 @@ public class Compiler {
             cstmt.kind = CompiledStmt.StmtKind.DECL_STMT;            
             cstmt.id = assignStmt.ID().getText();
             expr = assignStmt.expr();
-            if(ctx.isGlobal(cstmt.id))
+            if(ctx.isGlobal(cstmt.id) || ctx.isBuiltin(cstmt.id))
             {
-                compileError(assignStmt.ID().getSymbol(), "Attempt to redefine global");
+                compileError(assignStmt.ID().getSymbol(), "Attempt to redefine global/builtin variable");
             }else
             if(ctx.hasVar(cstmt.id))
             {
@@ -181,7 +182,8 @@ public class Compiler {
             cObjExprs.add(cobjExpr);
             if(rootVar && cobjExpr.kind == CompiledObjExpr.ObjExprKind.OBJ_REF)
             {
-                if(!ctx.varIsDefined(cobjExpr.id) && !ctx.isGlobal(cobjExpr.id))
+                if(!ctx.varIsDefined(cobjExpr.id) && !ctx.isGlobal(cobjExpr.id)
+                        && !ctx.isBuiltin(cobjExpr.id))
                 {
                     compileError(objExpr.ID().getSymbol(), "Undefined variable.");
                 }                         

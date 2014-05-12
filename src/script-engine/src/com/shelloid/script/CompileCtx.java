@@ -17,6 +17,12 @@ import java.util.Set;
 public class CompileCtx {
     ScriptBin bin;
     boolean isAsync;
+    static final HashSet<String> builtins = new HashSet<>();
+    static
+    {
+        builtins.add("args");
+        builtins.add("event");
+    }
     HashSet<String> vars = new HashSet<>();
     HashMap<String, ShelloidObject> globals;
     CompileCtx parentCtx;
@@ -42,6 +48,11 @@ public class CompileCtx {
     public boolean isGlobal(String var)
     {
         return globals.containsKey(var);
+    }
+    
+    public boolean isBuiltin(String var)
+    {
+        return builtins.contains(var);
     }
     
     public boolean varIsDefined(String var)
