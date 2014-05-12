@@ -6,18 +6,19 @@
 
 package com.shelloid.script;
 
+import java.util.ArrayList;
+
 /**
  *
  * @author Jayaraj Poroor
  */
-class CompiledStmt extends CompiledObject {
-
-    enum StmtKind {ASSIGN_STMT, DECL_STMT, EXPR_STMT};
-    StmtKind kind;
-    String   id;
-    CompiledExpr expr; 
+class CompiledObjExpr extends CompiledObject {
+    enum ObjExprKind {METHOD_CALL, OBJ_REF};
     
-    public CompiledStmt(SourceCtx srcCtx)
+    ObjExprKind kind;        
+    String id;
+    ArrayList<CompiledExpr> params;
+    public CompiledObjExpr(SourceCtx srcCtx)
     {
         super(srcCtx);
     }

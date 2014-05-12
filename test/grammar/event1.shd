@@ -23,15 +23,15 @@ job.on("all.list",
 async {
 	var allLists = job.store.allLists;
 	var header = job.store.listHeader;
-	var table = page.createTable(allLists, header);
+	var table = page.stack.createTable("folder.list", allLists, header);
 	table.row.addMenu("View Subfolder", "view.subfolder");
-	job.on("view.subfolder", {
-		job.restart(args.row.folder);
+	job.on("view.subfolder", async {
+		job.restart(event.row.folder);
 	});
-	page.stack.add("folder.list", table);
-	page.stack.refresh("folder.list");
+	table.show();
 });
 
 page.cmdline.on("cmd",
 {
 });
+

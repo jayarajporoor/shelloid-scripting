@@ -6,18 +6,20 @@
 
 package com.shelloid.script;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
  *
  * @author Jayaraj Poroor
  */
-public class CompiledScript {
+public class CompiledScript extends CompiledObject{
     ArrayList<CompiledStmt> stmts = new ArrayList<CompiledStmt>();
-    ScriptSource src;
-    public CompiledScript(ScriptSource src)
+    transient ArrayList<CompiledScript> asyncs = new ArrayList<CompiledScript>();
+    
+    public CompiledScript(SourceCtx srcCtx)
     {
-        this.src = src;
+        super(srcCtx);
     }
     
     public void addStmt(CompiledStmt stmt)
@@ -29,4 +31,15 @@ public class CompiledScript {
     {
         return stmts;
     }
+    
+    ArrayList<CompiledScript> getAsyncs()
+    {
+        return this.asyncs;
+    }
+
+    public void setAsyncs(ArrayList<CompiledScript> asyncs)
+    {
+        this.asyncs = asyncs;
+    }
+
 }

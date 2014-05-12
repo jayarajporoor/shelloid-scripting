@@ -6,19 +6,21 @@
 
 package com.shelloid.script;
 
+import java.io.Serializable;
+
 /**
  *
  * @author Jayaraj Poroor
  */
-class CompiledStmt extends CompiledObject {
-
-    enum StmtKind {ASSIGN_STMT, DECL_STMT, EXPR_STMT};
-    StmtKind kind;
-    String   id;
-    CompiledExpr expr; 
-    
-    public CompiledStmt(SourceCtx srcCtx)
+public class CompiledObject implements Serializable{
+    SourceCtx srcCtx;
+    public CompiledObject(SourceCtx srcCtx)
     {
-        super(srcCtx);
+        this.srcCtx = srcCtx;
+    }
+    
+    SourceCtx getSrcCtx()
+    {
+        return srcCtx;
     }
 }

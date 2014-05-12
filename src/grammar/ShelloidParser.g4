@@ -25,7 +25,7 @@ expr: objExprSeq | LP expr RP | literal |
       expr op=AND expr | expr op=OR expr | ASYNC? LC script RC
       ;
 objExpr: ID methodCall?;
-objExprSeq: (methodCall | objExpr) (DOT objExpr)*;
+objExprSeq: objExpr (DOT objExpr)*;
 
 methodCall: LP paramList? RP;
 paramList: expr (COMMA expr)*;
