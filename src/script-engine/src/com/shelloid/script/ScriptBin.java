@@ -15,9 +15,8 @@ import java.util.ArrayList;
  */
 public class ScriptBin implements Serializable{
     private CompiledScript script;
-    private ArrayList<CompiledScript> asyncs = new ArrayList<CompiledScript>();
-    
-    private ScriptSource   src;
+    private ScriptSource   src;    
+    private transient ArrayList<CompiledScript> asyncs = new ArrayList<CompiledScript>();    
     
     public ScriptBin()
     {
@@ -57,5 +56,12 @@ public class ScriptBin implements Serializable{
      */
     public ArrayList<CompiledScript> getAsyncs() {
         return asyncs;
+    }
+
+    /**
+     * @param asyncs the asyncs to set
+     */
+    public void setAsyncs(ArrayList<CompiledScript> asyncs) {
+        this.asyncs = asyncs;
     }
 }

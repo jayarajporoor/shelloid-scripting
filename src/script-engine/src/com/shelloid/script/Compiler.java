@@ -38,7 +38,7 @@ import org.antlr.v4.runtime.Token;
 public class Compiler {
     ArrayList<String> errorMsgs = new ArrayList();
     
-    public ScriptBin compile(ScriptSource src, HashMap<String, ShelloidObject> globals) 
+    public ScriptBin compile(ScriptSource src, HashMap<String, Object> globals) 
                                         throws IOException, CompilerException
     {
         InputStream is = src.getInputStream();
@@ -98,7 +98,7 @@ public class Compiler {
         {
             cstmt.kind = CompiledStmt.StmtKind.DECL_STMT;            
             cstmt.id = assignStmt.ID().getText();
-            expr = assignStmt.expr();
+            expr = assignStmt.expr();//may be null
             if(ctx.isGlobal(cstmt.id) || ctx.isBuiltin(cstmt.id))
             {
                 compileError(assignStmt.ID().getSymbol(), "Attempt to redefine global/builtin variable");

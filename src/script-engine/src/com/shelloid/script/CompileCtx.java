@@ -24,9 +24,9 @@ public class CompileCtx {
         builtins.add("event");
     }
     HashSet<String> vars = new HashSet<>();
-    HashMap<String, ShelloidObject> globals;
+    HashMap<String, Object> globals;
     CompileCtx parentCtx;
-    CompileCtx(ScriptBin bin, boolean isAsync, HashMap<String, ShelloidObject> globals, 
+    CompileCtx(ScriptBin bin, boolean isAsync, HashMap<String, Object> globals, 
                             CompileCtx parentCtx)
     {
         this.bin = bin;

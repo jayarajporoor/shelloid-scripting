@@ -10,6 +10,6 @@ package com.shelloid.script;
  *
  * @author Jayaraj Poroor
  */
-public class ShelloidObject {
+public interface ShelloidObject {
     
 }
