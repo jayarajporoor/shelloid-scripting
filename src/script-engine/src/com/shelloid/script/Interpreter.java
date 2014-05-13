@@ -72,7 +72,43 @@ public class Interpreter {
                     int index = ((Long)expr.value).intValue();                    
                     return bin.getAsyncs().get(index);
                 case OBJ_EXPR_SEQ: 
-                    return null;//TODO
+                    ArrayList<CompiledObjExpr> objExprs = 
+                                        (ArrayList<CompiledObjExpr>) expr.value;
+                    Iterator<CompiledObjExpr> it = objExprs.iterator();
+                    boolean isRootVar = true;
+                    Object obj = null;
+                    while(it.hasNext())
+                    {
+                        CompiledObjExpr objExpr = it.next();
+                        if(isRootVar)
+                        {
+                            String id = (String)objExpr.id;
+                            if(objExpr.kind == CompiledObjExpr.ObjExprKind.METHOD_CALL)
+                            {
+                                //method call on special 'this' object or similar
+                            }else
+                            {
+                                obj = env.getVar(id);
+                                if(obj == null)
+                                {
+                                    throw new InterpreterException(objExpr.getSrcCtx(), 
+                                                "Undefined variable: " + objExpr.id);
+                                }
+                            }
+                        }else                        
+                        {
+                            if(obj instanceof ShelloidObject)
+                            {
+                                
+                            }else
+                                throw new InterpreterException(objExpr.getSrcCtx(), 
+                                            "Attempt to access field of a non-shelloid object: " 
+                                                    + objExpr.id);
+                                
+                        }
+                        isRootVar = false;
+                    }
+                    return obj;//TODO
             }
         }catch(InterpreterException e)
         {
