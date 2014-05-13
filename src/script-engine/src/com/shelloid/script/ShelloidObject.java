@@ -6,10 +6,13 @@
 
 package com.shelloid.script;
 
+import java.util.ArrayList;
+
 /**
  *
  * @author Jayaraj Poroor
  */
 public interface ShelloidObject {
-    
+    public Object getField(String id);
+    public Object invokeMethod(String name, ArrayList<Object> params, ScriptBin bin, Env env);
 }

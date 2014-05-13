@@ -6,6 +6,9 @@
 
 package com.shelloid.script;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -38,17 +41,26 @@ public class Interpreter {
     
     public void executeStmt(CompiledStmt stmt, ScriptBin bin, Env env) throws InterpreterException
     {
+        Object result = null;
         switch(stmt.kind)
         {
             case DECL_STMT:
-                Object result = null;
                 if(stmt.expr != null)
-                    result = evalExpr(stmt.expr, env);
+                {
+                    result = evalExpr(stmt.expr, bin, env);
+                }
                 env.addVar(stmt.id, result);
                 break;
             case ASSIGN_STMT:
+                result = evalExpr(stmt.expr, bin, env);
+                if(!env.setVar(stmt.id, result))
+                {
+                    throw new InterpreterException(stmt.getSrcCtx(), 
+                            "Attempt to assign undefined variable: " + stmt.id);
+                }
                 break;
             case EXPR_STMT:
+                evalExpr(stmt.expr, bin, env);
                 break;
         }
     }
@@ -72,49 +84,108 @@ public class Interpreter {
                     int index = ((Long)expr.value).intValue();                    
                     return bin.getAsyncs().get(index);
                 case OBJ_EXPR_SEQ: 
-                    ArrayList<CompiledObjExpr> objExprs = 
-                                        (ArrayList<CompiledObjExpr>) expr.value;
-                    Iterator<CompiledObjExpr> it = objExprs.iterator();
-                    boolean isRootVar = true;
-                    Object obj = null;
-                    while(it.hasNext())
-                    {
-                        CompiledObjExpr objExpr = it.next();
-                        if(isRootVar)
-                        {
-                            String id = (String)objExpr.id;
-                            if(objExpr.kind == CompiledObjExpr.ObjExprKind.METHOD_CALL)
-                            {
-                                //method call on special 'this' object or similar
-                            }else
-                            {
-                                obj = env.getVar(id);
-                                if(obj == null)
-                                {
-                                    throw new InterpreterException(objExpr.getSrcCtx(), 
-                                                "Undefined variable: " + objExpr.id);
-                                }
-                            }
-                        }else                        
-                        {
-                            if(obj instanceof ShelloidObject)
-                            {
-                                
-                            }else
-                                throw new InterpreterException(objExpr.getSrcCtx(), 
-                                            "Attempt to access field of a non-shelloid object: " 
-                                                    + objExpr.id);
-                                
-                        }
-                        isRootVar = false;
-                    }
-                    return obj;//TODO
+                    return evalObjExprSeq(expr, bin, env);
+                default:
+                    throw new InterpreterException(expr.getSrcCtx(), "Unknown Expression!");
             }
         }catch(InterpreterException e)
         {
             e.setSourceCtx(expr.getSrcCtx());
             throw e;
         }
+    }
+    
+    static final MethodType scriptableMethodType = MethodType.methodType(
+                                            Object.class, 
+                                            String.class,
+                                            ArrayList.class,
+                                            ArrayList.class, 
+                                            ScriptBin.class, 
+                                            Env.class);
+    static MethodHandle scriptableMethod = null;
+    
+    public Object evalObjExprSeq(CompiledExpr expr, ScriptBin bin, Env env) 
+                                                    throws InterpreterException
+    {
+        ArrayList<CompiledObjExpr> objExprs
+                = (ArrayList<CompiledObjExpr>) expr.value;
+        Iterator<CompiledObjExpr> it = objExprs.iterator();
+        boolean isRootVar = true;
+        Object obj = null;
+        while (it.hasNext()) {
+            CompiledObjExpr objExpr = it.next();
+            String id = (String) objExpr.id;
+            if (isRootVar) {
+                if (objExpr.kind == CompiledObjExpr.ObjExprKind.METHOD_CALL) {
+                    obj = env.getVar("$this");
+                    if (obj == null) {
+                        throw new InterpreterException(objExpr.getSrcCtx(),
+                                "Couldn't obtain implicit object $this");
+                    }                    
+                } else {
+                    obj = env.getVar(id);
+                    if (obj == null) {
+                        throw new InterpreterException(objExpr.getSrcCtx(),
+                                "Undefined variable: " + objExpr.id);
+                    }
+                }
+            } else {
+                if (!(obj instanceof ShelloidObject)) {
+                    throw new InterpreterException(objExpr.getSrcCtx(),
+                            "Attempt to access field of a non-shelloid object: "
+                            + id);
+                }
+                if(objExpr.kind == CompiledObjExpr.ObjExprKind.OBJ_REF)
+                {
+                    obj = ((ShelloidObject)obj).getField(id);
+                }
+            }
+            if (objExpr.kind == CompiledObjExpr.ObjExprKind.METHOD_CALL) {
+                if(!(obj instanceof ShelloidObject))
+                {
+                    throw new InterpreterException(objExpr.getSrcCtx(),
+                            "Attempt to invoke method of a non-shelloid object: "
+                            + id + "(...)");                    
+                }
+                ArrayList<Object> params = new ArrayList<>();
+                Iterator<CompiledExpr> paramsIt = objExpr.params.iterator();
+                while (paramsIt.hasNext()) {
+                    CompiledExpr paramExpr = paramsIt.next();
+                    Object param = evalExpr(paramExpr, bin, env);
+                    params.add(param);
+                }
+                try{
+                    if(scriptableMethod == null)//taken once and cached as static.
+                    {
+                        scriptableMethod = MethodHandles.lookup().findVirtual(
+                            ShelloidObject.class, "invokeMethod", scriptableMethodType);
+                    }
+                    return scriptableMethod.invokeExact(id, params, bin, env);
+                }catch(NoSuchMethodException e)
+                {
+                    throw new InterpreterException(objExpr.getSrcCtx(), 
+                                                    "No such method: " + id, e);
+                }
+                catch(IllegalAccessException e)
+                {
+                    throw new InterpreterException(objExpr.getSrcCtx(), 
+                                                "Can't access method: " + id, e);
+                }catch(Throwable e)
+                {
+                    throw new InterpreterException(objExpr.getSrcCtx(), 
+                                            "Method threw exception: " + id, e);                    
+                }
+            }
+            
+            isRootVar = false;
+        }
+        
+        if(obj == null)
+        {
+            throw new InterpreterException(expr.getSrcCtx(),
+                    "The object expression sequence evaluated to null");            
+        }
+        return obj;
     }
     
     public Object evalOp(String op, Object leval, Object reval, 

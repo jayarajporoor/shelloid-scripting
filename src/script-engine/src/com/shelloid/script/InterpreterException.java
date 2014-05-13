@@ -18,6 +18,12 @@ public class InterpreterException extends Exception{
         this.srcCtx = srcCtx;
     }
 
+    public InterpreterException(SourceCtx srcCtx, String msg, Throwable cause)
+    {
+        super(msg, cause);
+        this.srcCtx = srcCtx;
+    }
+    
     public InterpreterException(String msg)
     {
         super(msg);
