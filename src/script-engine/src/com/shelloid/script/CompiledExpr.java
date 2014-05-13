@@ -17,7 +17,6 @@ class CompiledExpr extends CompiledObject{
     ExprKind kind;    
     CompiledExpr lexpr;
     CompiledExpr rexpr;
-    String  op;
     Object  value;
     
     public CompiledExpr(SourceCtx srcCtx)

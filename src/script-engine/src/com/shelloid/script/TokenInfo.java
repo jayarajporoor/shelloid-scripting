@@ -45,4 +45,9 @@ public class TokenInfo implements Serializable {
     public String getText() {
         return text;
     }
+    
+    public String toString()
+    {
+        return "Line : " + line + ", char: " + charPos + " near " + text;
+    }
 }
