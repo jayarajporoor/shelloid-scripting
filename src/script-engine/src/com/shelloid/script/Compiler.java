@@ -160,7 +160,7 @@ public class Compiler {
                 ArrayList<CompiledScript> asyncs = ctx.bin.getAsyncs();
                 int index = asyncs.size(); //must do before calling add(...)
                 asyncs.add(cscript);
-                cscript.setAsyncIndex(index);
+                cscript.setAsyncInfo(index, ctx.bin.getSrc());
                 cexpr.kind = CompiledExpr.ExprKind.ASYNC_INDEX_EXPR;
                 cexpr.value = index;
             }else
