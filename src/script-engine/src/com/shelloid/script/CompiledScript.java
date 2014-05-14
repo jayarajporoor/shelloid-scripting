@@ -15,28 +15,28 @@ import java.util.ArrayList;
  */
 public class CompiledScript extends CompiledObject{
     ArrayList<CompiledStmt> stmts = new ArrayList<CompiledStmt>();
-    boolean isAsync;
+    int asyncIndex;
     transient ArrayList<CompiledScript> asyncs = new ArrayList<CompiledScript>();
     
     public CompiledScript(SourceCtx srcCtx)
     {
-        this(srcCtx, false);
-    }
-    
-    public CompiledScript(SourceCtx srcCtx, boolean isAsync)
-    {
         super(srcCtx);
-        this.isAsync = isAsync;        
+        asyncIndex = -1;
     }
-    
+        
     public boolean isAsync()
     {
-        return isAsync;
+        return asyncIndex >= 0;
     }
     
-    void setAsync(boolean isAsync) {
-        this.isAsync = isAsync;
+    void setAsyncIndex(int asyncIndex) {
+        this.asyncIndex = asyncIndex;
     }    
+    
+    public int getAsyncIndex()
+    {
+        return asyncIndex;
+    }
     
     public void addStmt(CompiledStmt stmt)
     {

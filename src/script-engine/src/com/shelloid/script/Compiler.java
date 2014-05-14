@@ -155,12 +155,12 @@ public class Compiler {
             boolean isAsync = (expr.ASYNC() != null);
             CompileCtx newCtx = new CompileCtx(ctx.bin, isAsync, ctx.globals, ctx);
             CompiledScript cscript = translateScript(expr.script(), newCtx);
-            cscript.setAsync(isAsync);
             if(isAsync)
             {
                 ArrayList<CompiledScript> asyncs = ctx.bin.getAsyncs();
                 int index = asyncs.size(); //must do before calling add(...)
                 asyncs.add(cscript);
+                cscript.setAsyncIndex(index);
                 cexpr.kind = CompiledExpr.ExprKind.ASYNC_INDEX_EXPR;
                 cexpr.value = index;
             }else
