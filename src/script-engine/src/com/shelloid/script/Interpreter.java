@@ -18,15 +18,24 @@ import java.util.Iterator;
  * @author Jayaraj Poroor
  */
 public class Interpreter {
+    
+    static Interpreter instance = new Interpreter();
+    static final String implicit = "$implicit";
+    
     public Interpreter()
     {
     }
     
-    public void execute(ScriptBin bin, HashMap<String, Object> globals) throws InterpreterException
+    public static Interpreter getInstance(){
+        return instance;
+    }
+    
+    public Env execute(ScriptBin bin, HashMap<String, Object> globals) throws InterpreterException
     {
         Env env = new Env(globals);
         CompiledScript script = bin.getScript();
         executeScript(script, bin, env);
+        return env;
     }
     
     public void executeScript(CompiledScript script, ScriptBin bin, Env env) throws InterpreterException
@@ -117,10 +126,10 @@ public class Interpreter {
             String id = (String) objExpr.id;
             if (isRootVar) {
                 if (objExpr.kind == CompiledObjExpr.ObjExprKind.METHOD_CALL) {
-                    obj = env.getVar("$this");
+                    obj = env.getVar(implicit);
                     if (obj == null) {
                         throw new InterpreterException(objExpr.getSrcCtx(),
-                                "Couldn't obtain implicit object $this");
+                                "Couldn't obtain implicit object: " + implicit);
                     }                    
                 } else {
                     obj = env.getVar(id);

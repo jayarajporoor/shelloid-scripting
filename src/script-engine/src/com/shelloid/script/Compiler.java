@@ -36,7 +36,12 @@ import org.antlr.v4.runtime.Token;
  * @author Jayaraj Poroor
  */
 public class Compiler {
+    
     ArrayList<String> errorMsgs = new ArrayList();
+    
+    public Compiler()
+    {
+    }
     
     public ScriptBin compile(ScriptSource src, HashMap<String, Object> globals) 
                                         throws IOException, CompilerException
@@ -47,13 +52,17 @@ public class Compiler {
         parser.removeErrorListeners();
         parser.addErrorListener(new CustomErrorListener());
         ScriptContext script = parser.script();
+        ScriptBin bin = new ScriptBin();                    
         if(errorMsgs.isEmpty())
         {
-            ScriptBin bin = new ScriptBin();            
             CompileCtx ctx = new CompileCtx(bin, false, globals, null);
             CompiledScript cscript = translateScript(script, ctx);
             bin.setScript(cscript);
             bin.setSrc(src);
+        }
+        
+        if(errorMsgs.isEmpty())
+        {
             return bin;
         }else
         {

@@ -35,4 +35,9 @@ public class SourceCtx {
     public TokenInfo getEnd() {
         return end;
     }
+    
+    public String toString()
+    {
+        return "Source location at: " + start + ", ending at: " + end;
+    }
 }
