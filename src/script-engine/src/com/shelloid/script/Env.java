@@ -16,12 +16,10 @@ public class Env {
     HashMap<String, Object> vars = new HashMap<String, Object>();
     Env parent;
     Env globals;
-    boolean isAsync;
     
-    public Env(Env parent, boolean isAsync)
+    public Env(Env parent)
     {
         this.parent = parent;
-        this.isAsync = isAsync;
         this.globals = parent.globals;
     }
 
@@ -29,7 +27,6 @@ public class Env {
     {
         this.vars = globals;
         this.parent = null;
-        this.isAsync = false;
         this.globals = this;
     }
     
@@ -52,7 +49,7 @@ public class Env {
         }
         else
         {
-            if(isAsync || parent == null)
+            if(parent == null)
                 return null;
             else
                 return parent.getVar(var);
@@ -73,7 +70,7 @@ public class Env {
         }
         else
         {
-            if(isAsync || parent == null)
+            if(parent == null)
                 return false;
             else
                 return parent.setVar(var, value);

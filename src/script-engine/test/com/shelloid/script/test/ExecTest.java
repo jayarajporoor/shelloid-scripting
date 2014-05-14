@@ -8,6 +8,7 @@ package com.shelloid.script.test;
 
 import com.shelloid.script.CompiledScript;
 import com.shelloid.script.Compiler;
+import com.shelloid.script.CompilerException;
 import com.shelloid.script.Env;
 import com.shelloid.script.Interpreter;
 import com.shelloid.script.ScriptBin;
@@ -15,6 +16,7 @@ import com.shelloid.script.ShelloidObject;
 import com.shelloid.script.StringSource;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import org.junit.After;
 import org.junit.AfterClass;
 import static org.junit.Assert.*;
@@ -110,7 +112,7 @@ public class ExecTest {
             @Override
             public Object invokeMethod(String name, ArrayList<Object> params, ScriptBin bin, Env env) throws Exception{
                 CompiledScript script = (CompiledScript) params.get(0);
-                Env newEnv = new Env(env, false);
+                Env newEnv = new Env(env);
                 Interpreter.getInstance().executeScript(script, bin, newEnv);
                 return null;
             }
@@ -123,6 +125,63 @@ public class ExecTest {
         Interpreter interp = Interpreter.getInstance();
         Env env = interp.execute(bin, globals);
         assert(((Long)env.getVar("count")).intValue() == 101);
+    }
+
+    @Test
+    public void testRunAsyncScriptMethod() throws Exception
+    {
+        final StringBuffer buf = new StringBuffer();
+        final HashMap<String, Object> globals = new HashMap<String, Object>();
+        globals.put("res", new ShelloidObject()
+        {
+
+            @Override
+            public Object getField(String id) {
+                return null;
+            }
+
+            @Override
+            public Object invokeMethod(String name, ArrayList<Object> params, ScriptBin bin, Env env) throws Exception{
+                buf.append(params.get(0));
+                return null;
+            }            
+        });        
+        globals.put("stuff", new ShelloidObject()
+        {
+
+            @Override
+            public Object getField(String id) {
+                return null;
+            }
+
+            @Override
+            public Object invokeMethod(String name, ArrayList<Object> params, ScriptBin bin, Env env) throws Exception{
+                CompiledScript script = (CompiledScript) params.get(0);
+                Env globalsEnv = new Env(globals);
+                Env newEnv = new Env(globalsEnv);
+                Interpreter.getInstance().executeScript(script, bin, newEnv);
+                return null;
+            }
+            
+        });
+        Compiler compiler = new Compiler();
+        String ssrc = "var count = 100; stuff.exec(async {var c = 100; c=c+1;res.set(c);});";
+        StringSource src = new StringSource("test", ssrc);
+        try
+        {            
+            ScriptBin bin = compiler.compile(src, globals);
+            Interpreter interp = Interpreter.getInstance();
+            Env env = interp.execute(bin, globals);
+            assert(buf.toString().equals("101"));            
+        }catch(CompilerException e)
+        {
+           Iterator<String> it = e.getErrorMsgs().iterator();
+           while(it.hasNext())
+           {
+               System.out.println(it.next());
+           }
+           throw e;
+        }
     }
     
 }

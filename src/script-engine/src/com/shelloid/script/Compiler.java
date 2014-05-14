@@ -52,13 +52,12 @@ public class Compiler {
         parser.removeErrorListeners();
         parser.addErrorListener(new CustomErrorListener());
         ScriptContext script = parser.script();
-        ScriptBin bin = new ScriptBin();                    
+        ScriptBin bin = new ScriptBin(src);                    
         if(errorMsgs.isEmpty())
         {
             CompileCtx ctx = new CompileCtx(bin, false, globals, null);
             CompiledScript cscript = translateScript(script, ctx);
             bin.setScript(cscript);
-            bin.setSrc(src);
         }
         
         if(errorMsgs.isEmpty())
@@ -158,7 +157,7 @@ public class Compiler {
             if(isAsync)
             {
                 ArrayList<CompiledScript> asyncs = ctx.bin.getAsyncs();
-                int index = asyncs.size(); //must do before calling add(...)
+                long index = asyncs.size(); //must do before calling add(...)
                 asyncs.add(cscript);
                 cscript.setAsyncInfo(index, ctx.bin.getSrc());
                 cexpr.kind = CompiledExpr.ExprKind.ASYNC_INDEX_EXPR;
@@ -200,7 +199,8 @@ public class Compiler {
                 if(!ctx.varIsDefined(cobjExpr.id) && !ctx.isGlobal(cobjExpr.id)
                         && !ctx.isBuiltin(cobjExpr.id))
                 {
-                    compileError(objExpr.ID().getSymbol(), "Undefined variable.");
+                    compileError(objExpr.ID().getSymbol(), 
+                            "Undefined variable: " + cobjExpr.id);
                 }                         
             }
             rootVar = false;

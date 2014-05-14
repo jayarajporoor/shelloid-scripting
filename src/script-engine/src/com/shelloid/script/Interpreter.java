@@ -33,7 +33,7 @@ public class Interpreter {
     public Env execute(ScriptBin bin, HashMap<String, Object> globals) throws InterpreterException
     {
         Env globalsEnv = new Env(globals);
-        Env env = new Env(globalsEnv, false);
+        Env env = new Env(globalsEnv);
         CompiledScript script = bin.getScript();
         executeScript(script, bin, env);
         return env;

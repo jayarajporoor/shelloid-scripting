@@ -18,10 +18,10 @@ public class ScriptBin implements Serializable{
     private ScriptSource   src;    
     private transient ArrayList<CompiledScript> asyncs = new ArrayList<CompiledScript>();    
     
-    public ScriptBin()
+    public ScriptBin(ScriptSource src)
     {
-        
-    }
+        this.src = src;
+    }    
 
     /**
      * @return the script

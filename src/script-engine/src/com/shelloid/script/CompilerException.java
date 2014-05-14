@@ -20,7 +20,7 @@ public class CompilerException extends Exception{
         errorMsgs = msgs;
     }
     
-    ArrayList<String> getErrorMsgs()
+    public ArrayList<String> getErrorMsgs()
     {
         return errorMsgs;
     }

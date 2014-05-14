@@ -16,7 +16,7 @@ import java.util.ArrayList;
 public class CompiledScript extends CompiledObject{
     ArrayList<CompiledStmt> stmts = new ArrayList<CompiledStmt>();
     ScriptSource src;//stored only for async scripts.
-    int asyncIndex;
+    long asyncIndex;
     
     public CompiledScript(SourceCtx srcCtx)
     {
@@ -29,13 +29,13 @@ public class CompiledScript extends CompiledObject{
         return asyncIndex >= 0;
     }
     
-    void setAsyncInfo(int asyncIndex, ScriptSource src) {
+    void setAsyncInfo(long asyncIndex, ScriptSource src) {
         assert(asyncIndex >= 0 ? (src != null) : true);
         this.asyncIndex = asyncIndex;
         this.src = src;
     }    
     
-    public int getAsyncIndex()
+    public long getAsyncIndex()
     {
         return asyncIndex;
     }
