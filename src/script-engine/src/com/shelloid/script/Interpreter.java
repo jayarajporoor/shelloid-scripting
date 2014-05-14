@@ -151,7 +151,15 @@ public class Interpreter {
                 }
                 if(objExpr.kind == CompiledObjExpr.ObjExprKind.OBJ_REF)
                 {
-                    obj = ((ShelloidObject)obj).getField(id);
+                    try
+                    {
+                        obj = ((ShelloidObject)obj).getField(id);
+                    }catch(Exception e)
+                    {
+                        throw new InterpreterException(objExpr.getSrcCtx(), 
+                                            "Field access threw exception: " + id + ": " 
+                                             + e.getMessage(), e);                    
+                    }
                 }
             }
             if (objExpr.kind == CompiledObjExpr.ObjExprKind.METHOD_CALL) {

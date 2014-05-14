@@ -15,12 +15,28 @@ import java.util.ArrayList;
  */
 public class CompiledScript extends CompiledObject{
     ArrayList<CompiledStmt> stmts = new ArrayList<CompiledStmt>();
+    boolean isAsync;
     transient ArrayList<CompiledScript> asyncs = new ArrayList<CompiledScript>();
     
     public CompiledScript(SourceCtx srcCtx)
     {
-        super(srcCtx);
+        this(srcCtx, false);
     }
+    
+    public CompiledScript(SourceCtx srcCtx, boolean isAsync)
+    {
+        super(srcCtx);
+        this.isAsync = isAsync;        
+    }
+    
+    public boolean isAsync()
+    {
+        return isAsync;
+    }
+    
+    void setAsync(boolean isAsync) {
+        this.isAsync = isAsync;
+    }    
     
     public void addStmt(CompiledStmt stmt)
     {
@@ -41,5 +57,4 @@ public class CompiledScript extends CompiledObject{
     {
         this.asyncs = asyncs;
     }
-
 }

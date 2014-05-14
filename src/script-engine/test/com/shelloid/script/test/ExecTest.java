@@ -6,6 +6,7 @@
 
 package com.shelloid.script.test;
 
+import com.shelloid.script.CompiledScript;
 import com.shelloid.script.Compiler;
 import com.shelloid.script.Env;
 import com.shelloid.script.Interpreter;
@@ -66,7 +67,7 @@ public class ExecTest {
     }
 
     @Test
-    public void testRunMethod() throws Exception
+    public void testRunNoArgsMethod() throws Exception
     {
         HashMap<String, Object> globals = new HashMap<String, Object>();
         final StringBuffer methodName = new StringBuffer();
@@ -94,4 +95,34 @@ public class ExecTest {
         assert(methodName.toString().equals("show"));
     }
 
+    @Test
+    public void testRunScriptMethod() throws Exception
+    {
+        HashMap<String, Object> globals = new HashMap<String, Object>();
+        globals.put("stuff", new ShelloidObject()
+        {
+
+            @Override
+            public Object getField(String id) {
+                return null;
+            }
+
+            @Override
+            public Object invokeMethod(String name, ArrayList<Object> params, ScriptBin bin, Env env) throws Exception{
+                CompiledScript script = (CompiledScript) params.get(0);
+                Env newEnv = new Env(env, false);
+                Interpreter.getInstance().executeScript(script, bin, newEnv);
+                return null;
+            }
+            
+        });
+        Compiler compiler = new Compiler();
+        String ssrc = "var count = 100; stuff.exec({count = count + 1;});";
+        StringSource src = new StringSource("test", ssrc);
+        ScriptBin bin = compiler.compile(src, globals);
+        Interpreter interp = Interpreter.getInstance();
+        Env env = interp.execute(bin, globals);
+        assert(((Long)env.getVar("count")).intValue() == 101);
+    }
+    
 }

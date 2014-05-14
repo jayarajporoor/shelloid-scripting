@@ -155,6 +155,7 @@ public class Compiler {
             boolean isAsync = (expr.ASYNC() != null);
             CompileCtx newCtx = new CompileCtx(ctx.bin, isAsync, ctx.globals, ctx);
             CompiledScript cscript = translateScript(expr.script(), newCtx);
+            cscript.setAsync(isAsync);
             if(isAsync)
             {
                 ArrayList<CompiledScript> asyncs = ctx.bin.getAsyncs();
