@@ -132,7 +132,7 @@ public class ExecTest {
     {
         final StringBuffer buf = new StringBuffer();
         final HashMap<String, Object> globals = new HashMap<String, Object>();
-        globals.put("res", new ShelloidObject()
+        globals.put("store", new ShelloidObject()
         {
 
             @Override
@@ -155,8 +155,10 @@ public class ExecTest {
             }
 
             @Override
-            public Object invokeMethod(String name, ArrayList<Object> params, ScriptBin bin, Env env) throws Exception{
+            public Object invokeMethod(String name, ArrayList<Object> params, ScriptBin bin, Env env) throws Exception{                
                 CompiledScript script = (CompiledScript) params.get(0);
+                if(!script.isAsync())
+                    throw new Exception("Not an async block");
                 Env globalsEnv = new Env(globals);
                 Env newEnv = new Env(globalsEnv);
                 Interpreter.getInstance().executeScript(script, bin, newEnv);
@@ -165,7 +167,7 @@ public class ExecTest {
             
         });
         Compiler compiler = new Compiler();
-        String ssrc = "var count = 100; stuff.exec(async {var c = 100; c=c+1;res.set(c);});";
+        String ssrc = "var count = 100; stuff.exec(async {var c = 100; c=c+1;store.set(c);});";
         StringSource src = new StringSource("test", ssrc);
         try
         {            

@@ -22,7 +22,7 @@ public class Interpreter {
     static Interpreter instance = new Interpreter();
     static final String implicit = "$implicit";
     
-    public Interpreter()
+    private Interpreter()
     {
     }
     

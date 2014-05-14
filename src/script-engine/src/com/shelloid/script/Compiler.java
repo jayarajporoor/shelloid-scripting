@@ -52,11 +52,12 @@ public class Compiler {
         parser.removeErrorListeners();
         parser.addErrorListener(new CustomErrorListener());
         ScriptContext script = parser.script();
-        ScriptBin bin = new ScriptBin(src);                    
+        ScriptBin bin = new ScriptBin();                    
         if(errorMsgs.isEmpty())
         {
-            CompileCtx ctx = new CompileCtx(bin, false, globals, null);
+            CompileCtx ctx = new CompileCtx(src, bin, false, globals, null);
             CompiledScript cscript = translateScript(script, ctx);
+            cscript.setSrc(src);
             bin.setScript(cscript);
         }
         
@@ -152,14 +153,14 @@ public class Compiler {
         {
             CompiledExpr cexpr = new CompiledExpr(new SourceCtx(expr.start, expr.stop));            
             boolean isAsync = (expr.ASYNC() != null);
-            CompileCtx newCtx = new CompileCtx(ctx.bin, isAsync, ctx.globals, ctx);
+            CompileCtx newCtx = new CompileCtx(ctx.src, ctx.bin, isAsync, ctx.globals, ctx);
             CompiledScript cscript = translateScript(expr.script(), newCtx);
             if(isAsync)
             {
                 ArrayList<CompiledScript> asyncs = ctx.bin.getAsyncs();
                 long index = asyncs.size(); //must do before calling add(...)
                 asyncs.add(cscript);
-                cscript.setAsyncInfo(index, ctx.bin.getSrc());
+                cscript.setAsyncInfo(index, ctx.src);
                 cexpr.kind = CompiledExpr.ExprKind.ASYNC_INDEX_EXPR;
                 cexpr.value = index;
             }else

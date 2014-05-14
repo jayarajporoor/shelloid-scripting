@@ -15,7 +15,7 @@ import java.util.ArrayList;
  */
 public class CompiledScript extends CompiledObject{
     ArrayList<CompiledStmt> stmts = new ArrayList<CompiledStmt>();
-    ScriptSource src;//stored only for async scripts.
+    private ScriptSource src;//stored only for async scripts and top-level script.
     long asyncIndex;
     
     public CompiledScript(SourceCtx srcCtx)
@@ -32,7 +32,7 @@ public class CompiledScript extends CompiledObject{
     void setAsyncInfo(long asyncIndex, ScriptSource src) {
         assert(asyncIndex >= 0 ? (src != null) : true);
         this.asyncIndex = asyncIndex;
-        this.src = src;
+        this.setSrc(src);
     }    
     
     public long getAsyncIndex()
@@ -53,5 +53,12 @@ public class CompiledScript extends CompiledObject{
     ArrayList<CompiledStmt> getStmts()
     {
         return stmts;
+    }
+
+    /**
+     * @param src the src to set
+     */
+    public void setSrc(ScriptSource src) {
+        this.src = src;
     }
 }

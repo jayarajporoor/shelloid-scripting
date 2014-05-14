@@ -16,6 +16,7 @@ import java.util.Set;
  */
 public class CompileCtx {
     ScriptBin bin;
+    ScriptSource src;
     boolean isAsync;
     static final HashSet<String> builtins = new HashSet<>();
     static
@@ -26,9 +27,10 @@ public class CompileCtx {
     HashSet<String> vars = new HashSet<>();
     HashMap<String, Object> globals;
     CompileCtx parentCtx;
-    CompileCtx(ScriptBin bin, boolean isAsync, HashMap<String, Object> globals, 
+    CompileCtx(ScriptSource src, ScriptBin bin, boolean isAsync, HashMap<String, Object> globals, 
                             CompileCtx parentCtx)
     {
+        this.src = src;
         this.bin = bin;
         this.isAsync = isAsync;
         this.globals = globals;

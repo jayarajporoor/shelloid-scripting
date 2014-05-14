@@ -13,14 +13,12 @@ import java.util.ArrayList;
  *
  * @author Jayaraj Poroor
  */
-public class ScriptBin implements Serializable{
+public class ScriptBin{
     private CompiledScript script;
-    private ScriptSource   src;    
-    private transient ArrayList<CompiledScript> asyncs = new ArrayList<CompiledScript>();    
+    private ArrayList<CompiledScript> asyncs = new ArrayList<CompiledScript>();    
     
-    public ScriptBin(ScriptSource src)
+    public ScriptBin()
     {
-        this.src = src;
     }    
 
     /**
@@ -35,20 +33,6 @@ public class ScriptBin implements Serializable{
      */
     public void setScript(CompiledScript script) {
         this.script = script;
-    }
-
-    /**
-     * @return the src
-     */
-    public ScriptSource getSrc() {
-        return src;
-    }
-
-    /**
-     * @param src the src to set
-     */
-    public void setSrc(ScriptSource src) {
-        this.src = src;
     }
 
     /**
