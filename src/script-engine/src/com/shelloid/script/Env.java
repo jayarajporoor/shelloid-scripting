@@ -15,19 +15,32 @@ import java.util.HashMap;
 public class Env {
     HashMap<String, Object> vars = new HashMap<String, Object>();
     Env parent;
+    Env globals;
     boolean isAsync;
     
     public Env(Env parent, boolean isAsync)
     {
         this.parent = parent;
         this.isAsync = isAsync;
+        this.globals = parent.globals;
     }
 
     public Env(HashMap<String, Object> globals)
     {
         this.vars = globals;
         this.parent = null;
-        isAsync = false;
+        this.isAsync = false;
+        this.globals = this;
+    }
+    
+    public Env getGlobals()
+    {
+        return globals;
+    }
+    
+    public boolean hasVar(String var)
+    {
+        return this.vars.containsKey(var);
     }
 
     public Object getVar(String var)
@@ -39,7 +52,7 @@ public class Env {
         }
         else
         {
-            if(isAsync)
+            if(isAsync || parent == null)
                 return null;
             else
                 return parent.getVar(var);
@@ -60,7 +73,7 @@ public class Env {
         }
         else
         {
-            if(isAsync)
+            if(isAsync || parent == null)
                 return false;
             else
                 return parent.setVar(var, value);

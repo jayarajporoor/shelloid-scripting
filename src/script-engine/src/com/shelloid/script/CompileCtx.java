@@ -36,7 +36,7 @@ public class CompileCtx {
     }
     
     public void addVar(String var)
-    {
+    {        
         vars.add(var);
     }
     
@@ -64,7 +64,7 @@ public class CompileCtx {
         }
         else
         {
-            if(isAsync)
+            if(isAsync || parentCtx == null)
                 return false;
             else
                 return parentCtx.varIsDefined(var);

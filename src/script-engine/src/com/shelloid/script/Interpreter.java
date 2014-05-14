@@ -32,7 +32,8 @@ public class Interpreter {
     
     public Env execute(ScriptBin bin, HashMap<String, Object> globals) throws InterpreterException
     {
-        Env env = new Env(globals);
+        Env globalsEnv = new Env(globals);
+        Env env = new Env(globalsEnv, false);
         CompiledScript script = bin.getScript();
         executeScript(script, bin, env);
         return env;
@@ -62,6 +63,11 @@ public class Interpreter {
                 break;
             case ASSIGN_STMT:
                 result = evalExpr(stmt.expr, bin, env);
+                if(env.getGlobals().hasVar(stmt.id))
+                {
+                    throw new InterpreterException(stmt.getSrcCtx(), 
+                            "Attempt to assign global/predefined variable: " + stmt.id);                    
+                }
                 if(!env.setVar(stmt.id, result))
                 {
                     throw new InterpreterException(stmt.getSrcCtx(), 
@@ -107,7 +113,6 @@ public class Interpreter {
     static final MethodType scriptableMethodType = MethodType.methodType(
                                             Object.class, 
                                             String.class,
-                                            ArrayList.class,
                                             ArrayList.class, 
                                             ScriptBin.class, 
                                             Env.class);
@@ -157,23 +162,27 @@ public class Interpreter {
                             + id + "(...)");                    
                 }
                 ArrayList<Object> params = new ArrayList<>();
-                Iterator<CompiledExpr> paramsIt = objExpr.params.iterator();
-                while (paramsIt.hasNext()) {
-                    CompiledExpr paramExpr = paramsIt.next();
-                    Object param = evalExpr(paramExpr, bin, env);
-                    params.add(param);
+                if(objExpr.params != null)
+                {
+                    Iterator<CompiledExpr> paramsIt = objExpr.params.iterator();
+                    while (paramsIt.hasNext()) {
+                        CompiledExpr paramExpr = paramsIt.next();
+                        Object param = evalExpr(paramExpr, bin, env);
+                        params.add(param);
+                    }
                 }
+                final String invokeMethod = "invokeMethod";
                 try{
                     if(scriptableMethod == null)//taken once and cached as static.
                     {
                         scriptableMethod = MethodHandles.lookup().findVirtual(
-                            ShelloidObject.class, "invokeMethod", scriptableMethodType);
+                            ShelloidObject.class, invokeMethod, scriptableMethodType);
                     }
-                    return scriptableMethod.invokeExact(id, params, bin, env);
+                    return scriptableMethod.invokeExact((ShelloidObject)obj, id, params, bin, env);
                 }catch(NoSuchMethodException e)
                 {
                     throw new InterpreterException(objExpr.getSrcCtx(), 
-                                                    "No such method: " + id, e);
+                                                    "No such method: " + invokeMethod, e);
                 }
                 catch(IllegalAccessException e)
                 {
@@ -182,7 +191,8 @@ public class Interpreter {
                 }catch(Throwable e)
                 {
                     throw new InterpreterException(objExpr.getSrcCtx(), 
-                                            "Method threw exception: " + id, e);                    
+                                            "Method threw exception: " + id + ": " 
+                                             + e.getMessage(), e);                    
                 }
             }
             

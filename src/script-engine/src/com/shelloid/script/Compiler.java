@@ -97,24 +97,29 @@ public class Compiler {
             cstmt.kind = CompiledStmt.StmtKind.ASSIGN_STMT;            
             cstmt.id = assignStmt.ID().getText();            
             expr = assignStmt.expr();            
-            if(!ctx.varIsDefined(cstmt.id) && !ctx.isGlobal(cstmt.id) && 
-                    !ctx.isBuiltin(cstmt.id))
+            if(!ctx.varIsDefined(cstmt.id))
             {
-                compileError(assignStmt.ID().getSymbol(), "Undefined variable.");
+                compileError(assignStmt.ID().getSymbol(), 
+                                            "Undefined variable: " + cstmt.id);
+            }else
+            if(ctx.isGlobal(cstmt.id) || ctx.isBuiltin(cstmt.id))
+            {
+                compileError(assignStmt.ID().getSymbol(), 
+                            "Attempt to assign global variable: " + cstmt.id);
             }
         }else
         if(declStmt != null)
         {
             cstmt.kind = CompiledStmt.StmtKind.DECL_STMT;            
-            cstmt.id = assignStmt.ID().getText();
-            expr = assignStmt.expr();//may be null
+            cstmt.id = declStmt.ID().getText();
+            expr = declStmt.expr();//may be null
             if(ctx.isGlobal(cstmt.id) || ctx.isBuiltin(cstmt.id))
             {
-                compileError(assignStmt.ID().getSymbol(), "Attempt to redefine global/builtin variable");
+                compileError(declStmt.ID().getSymbol(), "Attempt to redefine global/builtin variable");
             }else
             if(ctx.hasVar(cstmt.id))
             {
-                compileError(assignStmt.ID().getSymbol(), "Variable is already defined.");
+                compileError(declStmt.ID().getSymbol(), "Variable is already defined.");
             }else
             {
                 ctx.addVar(cstmt.id);  
@@ -131,7 +136,7 @@ public class Compiler {
             CompiledExpr cexpr = translateExpr(expr, ctx);
             cstmt.expr = cexpr;
         }
-        return null;
+        return cstmt;
     }        
         
     CompiledExpr translateExpr(ExprContext expr, CompileCtx ctx)
