@@ -229,6 +229,12 @@ public class Interpreter {
                 case "*": return m * n;
                 case "/": return m / n;
                 case "%": return m % n;
+                case ">": return  m > n;
+                case ">=": return m >= n;
+                case "<": return m < n;
+                case "<=": return m <= n;
+                case "==": return m.equals(n);
+                case "!=": return !m.equals(n);                    
                 default:
                      throw new InterpreterException("Illegal operation: " + op + 
                              " on " + leval + " and " + reval);
@@ -255,6 +261,12 @@ public class Interpreter {
                 case "-": return flipped ? n - m : m - n;
                 case "*": return m * n;
                 case "/": return flipped? n /m : m / n;
+                case ">": return flipped? n > m : m > n;
+                case ">=": return flipped? n >= m : m >= n;
+                case "<": return flipped? n < m : m < n;
+                case "<=": return flipped? n <= m : m <= n;
+                case "==": return m.equals(n);
+                case "!=": return !m.equals(n);
                 default:
                      throw new InterpreterException("Illegal operation: " + op + 
                              " on " + leval + " and " + reval);
@@ -263,11 +275,19 @@ public class Interpreter {
         }else
         if(leval instanceof String || reval instanceof String)
         {
-            if(op.equals("+"))
-                return leval.toString() + reval.toString();
-            else
-                throw new InterpreterException("Illegal string operation: " + op +
+            switch(op)
+            {
+                case "+":
+                    return leval.toString() + reval.toString();
+                case "==":
+                     return leval.toString().equals(reval.toString());
+                case "!=":
+                     return !leval.toString().equals(reval.toString());   
+                default:
+                    throw new InterpreterException("Illegal string operation: " + op +
                              " on " + leval + " and " + reval);
+
+            }
                 
         }else
         if(leval instanceof Boolean && reval instanceof Boolean)
@@ -278,6 +298,8 @@ public class Interpreter {
             {
                 case "||": return m || n;
                 case "&&": return m && n;
+                case "==": return m.equals(n);
+                case "!=": return !m.equals(n);
                 default:
                      throw new InterpreterException("Illegal boolean operation: " + op + 
                              " on " + leval + " and " + reval);

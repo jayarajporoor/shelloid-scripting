@@ -14,6 +14,7 @@ import com.shelloid.script.Interpreter;
 import com.shelloid.script.ScriptBin;
 import com.shelloid.script.ShelloidObject;
 import com.shelloid.script.StringSource;
+import com.shelloid.script.lib.ImplicitObject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -185,5 +186,32 @@ public class ExecTest {
            throw e;
         }
     }
-    
+
+    @Test
+    public void testRel() throws Exception
+    {
+        HashMap<String, Object> globals = new HashMap<String, Object>();        
+        globals.put("$implicit", new ImplicitObject());
+        Compiler compiler = new Compiler();
+        String ssrc = "var count = 100; var cond = count > 100;";
+        StringSource src = new StringSource("test", ssrc);
+        ScriptBin bin = compiler.compile(src, globals);
+        Interpreter interp = Interpreter.getInstance();
+        Env env = interp.execute(bin, globals);
+    }
+
+    @Test
+    public void testIf() throws Exception
+    {
+        HashMap<String, Object> globals = new HashMap<String, Object>();        
+        globals.put("$implicit", new ImplicitObject());
+        Compiler compiler = new Compiler();
+        String ssrc = "var count = 100; if(count > 100, {count = count + 1;}, {count = count + 2;});";
+        StringSource src = new StringSource("test", ssrc);
+        ScriptBin bin = compiler.compile(src, globals);
+        Interpreter interp = Interpreter.getInstance();
+        Env env = interp.execute(bin, globals);
+        assert(((Long)env.getVar("count")).intValue() == 102);
+    }
+
 }
