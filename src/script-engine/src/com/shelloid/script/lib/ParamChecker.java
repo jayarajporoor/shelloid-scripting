@@ -39,25 +39,39 @@ public class ParamChecker {
         }
     }
 
-    public static boolean hasParams(String op, ArrayList<Object> params, Class[] paramTypes) 
+    public static int checkPolyParams(String op, ArrayList<Object> params, Class[][] paramTypes) 
                 throws IllegalArgumentException
     {
-        if(paramTypes.length != params.size())
+        boolean isMatching[] = new boolean[paramTypes.length];
+        for(int i =0;i<isMatching.length;i++)
         {
-            return false;
+            isMatching[i] = true;
         }
         Iterator<Object> it = params.iterator();
-        int i = 0;
+        int k =0;
+        int matchingIdx = -1;
         while(it.hasNext())
         {
             Object obj = it.next();
-            if(!paramTypes[i].isInstance(obj))
+            matchingIdx = -1;
+            for(int i=0;i< paramTypes.length;i++)
             {
-                return false;
+                if(isMatching[i] && !paramTypes[i][k].isInstance(obj))
+                {
+                    isMatching[i] = false;
+                }else
+                {
+                    matchingIdx = i;
+                }
             }
-            i++;
+            k++;
         }
-        return true;
-    }
-    
-}
+        
+        if(matchingIdx < 0)
+        {
+            throw new IllegalArgumentException("Wrong argument types passed to the polymorphic method: " 
+                      + op);            
+        }
+        return matchingIdx;
+    }    
+}    
