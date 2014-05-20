@@ -38,4 +38,26 @@ public class ParamChecker {
             i++;
         }
     }
+
+    public static boolean hasParams(String op, ArrayList<Object> params, Class[] paramTypes) 
+                throws IllegalArgumentException
+    {
+        if(paramTypes.length != params.size())
+        {
+            return false;
+        }
+        Iterator<Object> it = params.iterator();
+        int i = 0;
+        while(it.hasNext())
+        {
+            Object obj = it.next();
+            if(!paramTypes[i].isInstance(obj))
+            {
+                return false;
+            }
+            i++;
+        }
+        return true;
+    }
+    
 }
