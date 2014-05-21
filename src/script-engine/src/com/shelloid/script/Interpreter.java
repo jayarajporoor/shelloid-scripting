@@ -21,6 +21,7 @@ public class Interpreter {
     
     static Interpreter instance = new Interpreter();
     static final String implicit = "$implicit";
+    public static final String SHELLOID_PREFIX = "$";
     
     private Interpreter()
     {
@@ -109,14 +110,8 @@ public class Interpreter {
             throw e;
         }
     }
-    
-    static final MethodType scriptableMethodType = MethodType.methodType(
-                                            Object.class, 
-                                            String.class,
-                                            ArrayList.class, 
-                                            ScriptBin.class, 
-                                            Env.class);
-    static MethodHandle scriptableMethod = null;
+
+    static MethodType fieldAccessMethodType = null;
     
     public Object evalObjExprSeq(CompiledExpr expr, ScriptBin bin, Env env) 
                                                     throws InterpreterException
@@ -153,8 +148,28 @@ public class Interpreter {
                 {
                     try
                     {
-                        obj = ((ShelloidObject)obj).getField(id);
-                    }catch(Exception e)
+                        String realId = "$get_" + id;
+                        if(fieldAccessMethodType == null)
+                        {
+                            fieldAccessMethodType = MethodType.methodType(void.class);
+                        }
+                        MethodHandle methodHandle = MethodHandles.lookup().findVirtual
+                                                (obj.getClass(), realId, fieldAccessMethodType);
+                        
+                        obj = methodHandle.invoke(obj);
+                    }
+                    catch(NoSuchMethodException e)
+                    {
+                        throw new InterpreterException(objExpr.getSrcCtx(), 
+                                                        "No such field: " + id, e);
+                    }
+                    catch(IllegalAccessException e)
+                    {
+                        throw new InterpreterException(objExpr.getSrcCtx(), 
+                                                    "Can't access field: " + id + ": " + 
+                                                            e.getMessage(), e);
+                    }                    
+                    catch(Throwable e)
                     {
                         throw new InterpreterException(objExpr.getSrcCtx(), 
                                             "Field access threw exception: " + id + ": " 
@@ -170,6 +185,8 @@ public class Interpreter {
                             + id + "(...)");                    
                 }
                 ArrayList<Object> params = new ArrayList<>();
+                ArrayList<Class<?> > paramTypes = new ArrayList<>();
+                params.add(obj);//first the target object for method invocation
                 if(objExpr.params != null)
                 {
                     Iterator<CompiledExpr> paramsIt = objExpr.params.iterator();
@@ -177,25 +194,29 @@ public class Interpreter {
                         CompiledExpr paramExpr = paramsIt.next();
                         Object param = evalExpr(paramExpr, bin, env);
                         params.add(param);
+                        paramTypes.add(param.getClass());
                     }
                 }
-                final String invokeMethod = "invokeMethod";
+                params.add(bin);
+                params.add(env);
+                paramTypes.add(ScriptBin.class);
+                paramTypes.add(Env.class);
+                String realId = SHELLOID_PREFIX + id;
+                MethodType methodType = MethodType.methodType(Object.class, paramTypes);
                 try{
-                    if(scriptableMethod == null)//taken once and cached as static.
-                    {
-                        scriptableMethod = MethodHandles.lookup().findVirtual(
-                            ShelloidObject.class, invokeMethod, scriptableMethodType);
-                    }
-                    return scriptableMethod.invokeExact((ShelloidObject)obj, id, params, bin, env);
+                    MethodHandle methodHandle = MethodHandles.lookup().findVirtual
+                                                (obj.getClass(), realId, methodType);
+                    return methodHandle.invokeWithArguments(params);
                 }catch(NoSuchMethodException e)
                 {
                     throw new InterpreterException(objExpr.getSrcCtx(), 
-                                                    "No such method: " + invokeMethod, e);
+                                                    "No such method: " + id, e);
                 }
                 catch(IllegalAccessException e)
                 {
                     throw new InterpreterException(objExpr.getSrcCtx(), 
-                                                "Can't access method: " + id, e);
+                                                "Can't access method: " + id + ": " + 
+                                                        e.getMessage(), e);
                 }catch(Throwable e)
                 {
                     throw new InterpreterException(objExpr.getSrcCtx(), 

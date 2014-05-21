@@ -69,56 +69,40 @@ public class ExecTest {
         assert(((Long)env.getVar("count")).intValue() == 101);
     }
 
+    public class ShowMethodObject implements ShelloidObject
+    {
+            public Object $show(ScriptBin bin, Env env) {
+                env.setVar("s", "show");
+                return null;
+            }        
+    }
     @Test
     public void testRunNoArgsMethod() throws Exception
     {
         HashMap<String, Object> globals = new HashMap<String, Object>();
-        final StringBuffer methodName = new StringBuffer();
-        globals.put("page", new ShelloidObject()
-        {
-
-            @Override
-            public Object getField(String id) {
-                return null;
-            }
-
-            @Override
-            public Object invokeMethod(String name, ArrayList<Object> params, ScriptBin bin, Env env) {
-                methodName.append(name);
-                return null;
-            }
-            
-        });
+        globals.put("page", new ShowMethodObject());
         Compiler compiler = new Compiler();
-        String ssrc = "page.show();";
+        String ssrc = "var s = \"\"; page.show();";
         StringSource src = new StringSource("test", ssrc);
         ScriptBin bin = compiler.compile(src, globals);
         Interpreter interp = Interpreter.getInstance();
         Env env = interp.execute(bin, globals);
-        assert(methodName.toString().equals("show"));
+        assert(env.getVar("s").equals("show"));
     }
 
+    public class SyncExecObject implements ShelloidObject
+    {
+            public Object $exec(CompiledScript script, ScriptBin bin, Env env) throws Exception{
+                Env newEnv = new Env(env);
+                Interpreter.getInstance().executeScript(script, bin, newEnv);
+                return null;
+            }        
+    }
     @Test
     public void testRunScriptMethod() throws Exception
     {
         HashMap<String, Object> globals = new HashMap<String, Object>();
-        globals.put("stuff", new ShelloidObject()
-        {
-
-            @Override
-            public Object getField(String id) {
-                return null;
-            }
-
-            @Override
-            public Object invokeMethod(String name, ArrayList<Object> params, ScriptBin bin, Env env) throws Exception{
-                CompiledScript script = (CompiledScript) params.get(0);
-                Env newEnv = new Env(env);
-                Interpreter.getInstance().executeScript(script, bin, newEnv);
-                return null;
-            }
-            
-        });
+        globals.put("stuff", new SyncExecObject());
         Compiler compiler = new Compiler();
         String ssrc = "var count = 100; stuff.exec({count = count + 1;});";
         StringSource src = new StringSource("test", ssrc);
@@ -128,45 +112,37 @@ public class ExecTest {
         assert(((Long)env.getVar("count")).intValue() == 101);
     }
 
+    public class SimpleStore implements ShelloidObject
+    {
+        StringBuffer buf = new StringBuffer();
+        public Object $set(Long value, ScriptBin bin, Env env) throws Exception{
+            buf.append(value);
+            return null;
+        }                    
+    }
+    
+    public class AsyncExecObject implements ShelloidObject
+    {
+        public HashMap<String, Object> globals = null;
+        public Object $exec(CompiledScript script, ScriptBin bin, Env env) throws Exception {
+            if (!script.isAsync()) {
+                throw new Exception("Not an async block");
+            }
+            Env globalsEnv = new Env(globals);
+            Env newEnv = new Env(globalsEnv);
+            Interpreter.getInstance().executeScript(script, bin, newEnv);
+            return null;
+        }
+    }
     @Test
     public void testRunAsyncScriptMethod() throws Exception
     {
-        final StringBuffer buf = new StringBuffer();
-        final HashMap<String, Object> globals = new HashMap<String, Object>();
-        globals.put("store", new ShelloidObject()
-        {
-
-            @Override
-            public Object getField(String id) {
-                return null;
-            }
-
-            @Override
-            public Object invokeMethod(String name, ArrayList<Object> params, ScriptBin bin, Env env) throws Exception{
-                buf.append(params.get(0));
-                return null;
-            }            
-        });        
-        globals.put("stuff", new ShelloidObject()
-        {
-
-            @Override
-            public Object getField(String id) {
-                return null;
-            }
-
-            @Override
-            public Object invokeMethod(String name, ArrayList<Object> params, ScriptBin bin, Env env) throws Exception{                
-                CompiledScript script = (CompiledScript) params.get(0);
-                if(!script.isAsync())
-                    throw new Exception("Not an async block");
-                Env globalsEnv = new Env(globals);
-                Env newEnv = new Env(globalsEnv);
-                Interpreter.getInstance().executeScript(script, bin, newEnv);
-                return null;
-            }
-            
-        });
+        final HashMap<String, Object> globals = new HashMap<>();
+        SimpleStore store = new SimpleStore();
+        globals.put("store", store);
+        AsyncExecObject asyncExec = new AsyncExecObject();
+        asyncExec.globals = globals;
+        globals.put("stuff", asyncExec);
         Compiler compiler = new Compiler();
         String ssrc = "var count = 100; stuff.exec(async {var c = 100; c=c+1;store.set(c);});";
         StringSource src = new StringSource("test", ssrc);
@@ -175,7 +151,7 @@ public class ExecTest {
             ScriptBin bin = compiler.compile(src, globals);
             Interpreter interp = Interpreter.getInstance();
             Env env = interp.execute(bin, globals);
-            assert(buf.toString().equals("101"));            
+            assert(store.buf.toString().equals("101"));            
         }catch(CompilerException e)
         {
            Iterator<String> it = e.getErrorMsgs().iterator();
