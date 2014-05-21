@@ -151,7 +151,7 @@ public class Interpreter {
                         String realId = "$get_" + id;
                         if(fieldAccessMethodType == null)
                         {
-                            fieldAccessMethodType = MethodType.methodType(void.class);
+                            fieldAccessMethodType = MethodType.methodType(Object.class);
                         }
                         MethodHandle methodHandle = MethodHandles.lookup().findVirtual
                                                 (obj.getClass(), realId, fieldAccessMethodType);
@@ -161,7 +161,7 @@ public class Interpreter {
                     catch(NoSuchMethodException e)
                     {
                         throw new InterpreterException(objExpr.getSrcCtx(), 
-                                                        "No such field: " + id, e);
+                                            "No such field: " + id + " : " + e.getMessage(), e);
                     }
                     catch(IllegalAccessException e)
                     {

@@ -71,10 +71,15 @@ public class ExecTest {
 
     public class ShowMethodObject implements ShelloidObject
     {
-            public Object $show(ScriptBin bin, Env env) {
-                env.setVar("s", "show");
-                return null;
-            }        
+        
+        public Object $get_count()
+        {
+            return 200L;
+        }
+        public Object $show(ScriptBin bin, Env env) {
+            env.setVar("s", "show");
+            return null;
+        }
     }
     @Test
     public void testRunNoArgsMethod() throws Exception
@@ -82,12 +87,12 @@ public class ExecTest {
         HashMap<String, Object> globals = new HashMap<String, Object>();
         globals.put("page", new ShowMethodObject());
         Compiler compiler = new Compiler();
-        String ssrc = "var s = \"\"; page.show();";
+        String ssrc = "var count = 0; var s = \"\"; page.show(); count = page.count;";
         StringSource src = new StringSource("test", ssrc);
         ScriptBin bin = compiler.compile(src, globals);
         Interpreter interp = Interpreter.getInstance();
         Env env = interp.execute(bin, globals);
-        assert(env.getVar("s").equals("show"));
+        assert(env.getVar("count").equals(200L));
     }
 
     public class SyncExecObject implements ShelloidObject
