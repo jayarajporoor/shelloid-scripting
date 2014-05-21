@@ -35,5 +35,10 @@ public class StringSource implements ScriptSource {
     public InputStream getInputStream() throws IOException {
         return new ByteArrayInputStream(src.getBytes());
     }
+
+    @Override
+    public long getVersion() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
     
 }

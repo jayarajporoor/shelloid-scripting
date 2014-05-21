@@ -16,5 +16,6 @@ import java.io.Serializable;
  */
 public interface ScriptSource extends Serializable{
     public String getLocation();
+    public long   getVersion();
     public InputStream getInputStream() throws IOException;
 }

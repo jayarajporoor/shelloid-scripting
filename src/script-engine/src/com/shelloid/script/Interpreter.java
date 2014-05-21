@@ -97,8 +97,8 @@ public class Interpreter {
                 case SCRIPT_EXPR:
                     return expr.value;
                 case ASYNC_INDEX_EXPR:
-                    int index = ((Long)expr.value).intValue();                    
-                    return bin.getAsyncs().get(index);
+                    int index = ((Long)expr.value).intValue();
+                    return new AsyncInfo(bin.getScript().getSource(), index);
                 case OBJ_EXPR_SEQ: 
                     return evalObjExprSeq(expr, bin, env);
                 default:

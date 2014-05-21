@@ -6,6 +6,7 @@
 
 package com.shelloid.script.test;
 
+import com.shelloid.script.AsyncInfo;
 import com.shelloid.script.CompiledScript;
 import com.shelloid.script.Compiler;
 import com.shelloid.script.CompilerException;
@@ -129,7 +130,9 @@ public class ExecTest {
     public class AsyncExecObject implements ShelloidObject
     {
         public HashMap<String, Object> globals = null;
-        public Object $exec(CompiledScript script, ScriptBin bin, Env env) throws Exception {
+        public ScriptBin bin;
+        public Object $exec(AsyncInfo info, ScriptBin bin, Env env) throws Exception {
+            CompiledScript script = bin.getAsyncs().get(info.getIndex());
             if (!script.isAsync()) {
                 throw new Exception("Not an async block");
             }
@@ -154,6 +157,7 @@ public class ExecTest {
         try
         {            
             ScriptBin bin = compiler.compile(src, globals);
+            asyncExec.bin = bin;            
             Interpreter interp = Interpreter.getInstance();
             Env env = interp.execute(bin, globals);
             assert(store.buf.toString().equals("101"));            
