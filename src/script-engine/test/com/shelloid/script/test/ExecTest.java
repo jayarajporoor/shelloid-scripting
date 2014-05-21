@@ -15,8 +15,8 @@ import com.shelloid.script.Interpreter;
 import com.shelloid.script.ScriptBin;
 import com.shelloid.script.ScriptSource;
 import com.shelloid.script.ShelloidObject;
-import com.shelloid.script.StringSource;
 import com.shelloid.script.lib.ImplicitObject;
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -64,8 +64,9 @@ public class ExecTest {
         //globals.put("count", new Long(100));
         Compiler compiler = new Compiler();
         String ssrc = "var count = 100; count = count + 1;";
-        StringSource src = new StringSource("test", ssrc);
-        ScriptBin bin = compiler.compile(src, globals);
+        ByteArrayInputStream is = new ByteArrayInputStream(ssrc.getBytes());
+        ScriptSource src = new ScriptSource();
+        ScriptBin bin = compiler.compile(is, src, globals);
         Interpreter interp = Interpreter.getInstance();
         Env env = interp.execute(bin.getScript(), globals);
         assert(((Long)env.getVar("count")).intValue() == 101);
@@ -90,8 +91,9 @@ public class ExecTest {
         globals.put("page", new ShowMethodObject());
         Compiler compiler = new Compiler();
         String ssrc = "var count = 0; var s = \"\"; page.show(); count = page.count;";
-        StringSource src = new StringSource("test", ssrc);
-        ScriptBin bin = compiler.compile(src, globals);
+        ByteArrayInputStream is = new ByteArrayInputStream(ssrc.getBytes());
+        ScriptSource src = new ScriptSource();
+        ScriptBin bin = compiler.compile(is, src, globals);
         Interpreter interp = Interpreter.getInstance();
         Env env = interp.execute(bin.getScript(), globals);
         assert(env.getVar("count").equals(200L));
@@ -112,8 +114,9 @@ public class ExecTest {
         globals.put("stuff", new SyncExecObject());
         Compiler compiler = new Compiler();
         String ssrc = "var count = 100; stuff.exec({count = count + 1;});";
-        StringSource src = new StringSource("test", ssrc);
-        ScriptBin bin = compiler.compile(src, globals);
+        ByteArrayInputStream is = new ByteArrayInputStream(ssrc.getBytes());
+        ScriptSource src = new ScriptSource();
+        ScriptBin bin = compiler.compile(is, src, globals);
         Interpreter interp = Interpreter.getInstance();
         Env env = interp.execute(bin.getScript(), globals);
         assert(((Long)env.getVar("count")).intValue() == 101);
@@ -154,10 +157,11 @@ public class ExecTest {
         globals.put("stuff", asyncExec);
         Compiler compiler = new Compiler();
         String ssrc = "var count = 100; stuff.exec(async {var c = 100; c=c+1;store.set(c);});";
-        StringSource src = new StringSource("test", ssrc);
+        ByteArrayInputStream is = new ByteArrayInputStream(ssrc.getBytes());
+        ScriptSource src = new ScriptSource();
         try
         {            
-            ScriptBin bin = compiler.compile(src, globals);
+            ScriptBin bin = compiler.compile(is, src, globals);
             asyncExec.bin = bin;            
             Interpreter interp = Interpreter.getInstance();
             Env env = interp.execute(bin.getScript(), globals);
@@ -180,8 +184,9 @@ public class ExecTest {
         globals.put("$implicit", new ImplicitObject());
         Compiler compiler = new Compiler();
         String ssrc = "var count = 100; var cond = count > 100;";
-        StringSource src = new StringSource("test", ssrc);
-        ScriptBin bin = compiler.compile(src, globals);
+        ByteArrayInputStream is = new ByteArrayInputStream(ssrc.getBytes());
+        ScriptSource src = new ScriptSource();        
+        ScriptBin bin = compiler.compile(is, src, globals);
         Interpreter interp = Interpreter.getInstance();
         Env env = interp.execute(bin.getScript(), globals);
     }
@@ -193,8 +198,9 @@ public class ExecTest {
         globals.put("$implicit", new ImplicitObject());
         Compiler compiler = new Compiler();
         String ssrc = "var count = 100; if(count > 100, {count = count + 1;}, {count = count + 2;});";
-        StringSource src = new StringSource("test", ssrc);
-        ScriptBin bin = compiler.compile(src, globals);
+        ByteArrayInputStream is = new ByteArrayInputStream(ssrc.getBytes());
+        ScriptSource src = new ScriptSource();
+        ScriptBin bin = compiler.compile(is, src, globals);
         Interpreter interp = Interpreter.getInstance();
         Env env = interp.execute(bin.getScript(), globals);
         assert(((Long)env.getVar("count")).intValue() == 102);

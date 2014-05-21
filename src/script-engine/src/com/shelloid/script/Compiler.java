@@ -43,11 +43,10 @@ public class Compiler {
     {
     }
     
-    public ScriptBin compile(ScriptSource src, HashMap<String, Object> globals) 
+    public ScriptBin compile(InputStream is, ScriptSource src, HashMap<String, Object> globals) 
                                         throws IOException, CompilerException
     {
         errorMsgs.clear();
-        InputStream is = src.getInputStream();
         ShelloidLexer lexer = new ShelloidLexer(new ANTLRInputStream(is));
         ShelloidParser parser = new ShelloidParser(new CommonTokenStream(lexer));
         parser.removeErrorListeners();
