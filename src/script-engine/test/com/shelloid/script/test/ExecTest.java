@@ -13,6 +13,7 @@ import com.shelloid.script.CompilerException;
 import com.shelloid.script.Env;
 import com.shelloid.script.Interpreter;
 import com.shelloid.script.ScriptBin;
+import com.shelloid.script.ScriptSource;
 import com.shelloid.script.ShelloidObject;
 import com.shelloid.script.StringSource;
 import com.shelloid.script.lib.ImplicitObject;
@@ -66,7 +67,7 @@ public class ExecTest {
         StringSource src = new StringSource("test", ssrc);
         ScriptBin bin = compiler.compile(src, globals);
         Interpreter interp = Interpreter.getInstance();
-        Env env = interp.execute(bin, globals);
+        Env env = interp.execute(bin.getScript(), globals);
         assert(((Long)env.getVar("count")).intValue() == 101);
     }
 
@@ -77,7 +78,7 @@ public class ExecTest {
         {
             return 200L;
         }
-        public Object $show(ScriptBin bin, Env env) {
+        public Object $show(ScriptSource src, Env env) {
             env.setVar("s", "show");
             return null;
         }
@@ -92,15 +93,15 @@ public class ExecTest {
         StringSource src = new StringSource("test", ssrc);
         ScriptBin bin = compiler.compile(src, globals);
         Interpreter interp = Interpreter.getInstance();
-        Env env = interp.execute(bin, globals);
+        Env env = interp.execute(bin.getScript(), globals);
         assert(env.getVar("count").equals(200L));
     }
 
     public class SyncExecObject implements ShelloidObject
     {
-            public Object $exec(CompiledScript script, ScriptBin bin, Env env) throws Exception{
+            public Object $exec(CompiledScript script, ScriptSource src, Env env) throws Exception{
                 Env newEnv = new Env(env);
-                Interpreter.getInstance().executeScript(script, bin, newEnv);
+                Interpreter.getInstance().execute(script, src, newEnv);
                 return null;
             }        
     }
@@ -114,14 +115,14 @@ public class ExecTest {
         StringSource src = new StringSource("test", ssrc);
         ScriptBin bin = compiler.compile(src, globals);
         Interpreter interp = Interpreter.getInstance();
-        Env env = interp.execute(bin, globals);
+        Env env = interp.execute(bin.getScript(), globals);
         assert(((Long)env.getVar("count")).intValue() == 101);
     }
 
     public class SimpleStore implements ShelloidObject
     {
         StringBuffer buf = new StringBuffer();
-        public Object $set(Long value, ScriptBin bin, Env env) throws Exception{
+        public Object $set(Long value, ScriptSource src, Env env) throws Exception{
             buf.append(value);
             return null;
         }                    
@@ -131,14 +132,14 @@ public class ExecTest {
     {
         public HashMap<String, Object> globals = null;
         public ScriptBin bin;
-        public Object $exec(AsyncInfo info, ScriptBin bin, Env env) throws Exception {
+        public Object $exec(AsyncInfo info, ScriptSource src, Env env) throws Exception {
             CompiledScript script = bin.getAsyncs().get(info.getIndex());
             if (!script.isAsync()) {
                 throw new Exception("Not an async block");
             }
             Env globalsEnv = new Env(globals);
             Env newEnv = new Env(globalsEnv);
-            Interpreter.getInstance().executeScript(script, bin, newEnv);
+            Interpreter.getInstance().execute(script, src, newEnv);
             return null;
         }
     }
@@ -159,7 +160,7 @@ public class ExecTest {
             ScriptBin bin = compiler.compile(src, globals);
             asyncExec.bin = bin;            
             Interpreter interp = Interpreter.getInstance();
-            Env env = interp.execute(bin, globals);
+            Env env = interp.execute(bin.getScript(), globals);
             assert(store.buf.toString().equals("101"));            
         }catch(CompilerException e)
         {
@@ -182,7 +183,7 @@ public class ExecTest {
         StringSource src = new StringSource("test", ssrc);
         ScriptBin bin = compiler.compile(src, globals);
         Interpreter interp = Interpreter.getInstance();
-        Env env = interp.execute(bin, globals);
+        Env env = interp.execute(bin.getScript(), globals);
     }
 
     @Test
@@ -195,7 +196,7 @@ public class ExecTest {
         StringSource src = new StringSource("test", ssrc);
         ScriptBin bin = compiler.compile(src, globals);
         Interpreter interp = Interpreter.getInstance();
-        Env env = interp.execute(bin, globals);
+        Env env = interp.execute(bin.getScript(), globals);
         assert(((Long)env.getVar("count")).intValue() == 102);
     }
 

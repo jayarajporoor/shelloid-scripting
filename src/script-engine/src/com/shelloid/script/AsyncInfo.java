@@ -13,20 +13,11 @@ import java.io.Serializable;
  * @author Jayaraj Poroor
  */
 public class AsyncInfo implements Serializable {
-    private ScriptSource src;
-    private int          index;
+    private final int          index;
     
-    public AsyncInfo(ScriptSource src, int index)
+    public AsyncInfo(int index)
     {
-        this.src = src;
         this.index = index;
-    }
-
-    /**
-     * @return the src
-     */
-    public ScriptSource getSrc() {
-        return src;
     }
 
     /**

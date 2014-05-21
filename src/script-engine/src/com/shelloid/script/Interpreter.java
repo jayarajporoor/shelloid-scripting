@@ -31,26 +31,25 @@ public class Interpreter {
         return instance;
     }
     
-    public Env execute(ScriptBin bin, HashMap<String, Object> globals) throws InterpreterException
+    public Env execute(CompiledScript script, HashMap<String, Object> globals) throws InterpreterException
     {
         Env globalsEnv = new Env(globals);
         Env env = new Env(globalsEnv);
-        CompiledScript script = bin.getScript();
-        executeScript(script, bin, env);
+        execute(script, script.getSource(), env);
         return env;
     }
     
-    public void executeScript(CompiledScript script, ScriptBin bin, Env env) throws InterpreterException
+    public void execute(CompiledScript script, ScriptSource src, Env env) throws InterpreterException
     {
         Iterator<CompiledStmt> it = script.getStmts().iterator();
         while(it.hasNext())
         {
             CompiledStmt stmt = it.next();
-            executeStmt(stmt, bin, env);
+            executeStmt(stmt, src, env);
         }
     }
     
-    public void executeStmt(CompiledStmt stmt, ScriptBin bin, Env env) throws InterpreterException
+    public void executeStmt(CompiledStmt stmt, ScriptSource src, Env env) throws InterpreterException
     {
         Object result = null;
         switch(stmt.kind)
@@ -58,12 +57,12 @@ public class Interpreter {
             case DECL_STMT:
                 if(stmt.expr != null)
                 {
-                    result = evalExpr(stmt.expr, bin, env);
+                    result = evalExpr(stmt.expr, src, env);
                 }
                 env.addVar(stmt.id, result);
                 break;
             case ASSIGN_STMT:
-                result = evalExpr(stmt.expr, bin, env);
+                result = evalExpr(stmt.expr, src, env);
                 if(env.getGlobals().hasVar(stmt.id))
                 {
                     throw new InterpreterException(stmt.getSrcCtx(), 
@@ -76,12 +75,12 @@ public class Interpreter {
                 }
                 break;
             case EXPR_STMT:
-                evalExpr(stmt.expr, bin, env);
+                evalExpr(stmt.expr, src, env);
                 break;
         }
     }
     
-    public Object evalExpr(CompiledExpr expr, ScriptBin bin, Env env) throws InterpreterException
+    public Object evalExpr(CompiledExpr expr, ScriptSource src, Env env) throws InterpreterException
     { 
         try
         {
@@ -90,17 +89,17 @@ public class Interpreter {
                 case LITERAL_EXPR:
                     return expr.value;
                 case OP_EXPR:
-                    Object leval = evalExpr(expr.lexpr, bin, env);
+                    Object leval = evalExpr(expr.lexpr, src, env);
                     Object reval = expr.rexpr != null ? 
-                                        evalExpr(expr.rexpr, bin, env) : null;
-                    return evalOp((String)expr.value, leval, reval, bin, env);
+                                        evalExpr(expr.rexpr, src, env) : null;
+                    return evalOp((String)expr.value, leval, reval, src, env);
                 case SCRIPT_EXPR:
                     return expr.value;
                 case ASYNC_INDEX_EXPR:
                     int index = ((Long)expr.value).intValue();
-                    return new AsyncInfo(bin.getScript().getSource(), index);
+                    return new AsyncInfo(index);
                 case OBJ_EXPR_SEQ: 
-                    return evalObjExprSeq(expr, bin, env);
+                    return evalObjExprSeq(expr, src, env);
                 default:
                     throw new InterpreterException(expr.getSrcCtx(), "Unknown Expression!");
             }
@@ -113,7 +112,7 @@ public class Interpreter {
 
     static MethodType fieldAccessMethodType = null;
     
-    public Object evalObjExprSeq(CompiledExpr expr, ScriptBin bin, Env env) 
+    public Object evalObjExprSeq(CompiledExpr expr, ScriptSource src, Env env) 
                                                     throws InterpreterException
     {
         ArrayList<CompiledObjExpr> objExprs
@@ -192,14 +191,14 @@ public class Interpreter {
                     Iterator<CompiledExpr> paramsIt = objExpr.params.iterator();
                     while (paramsIt.hasNext()) {
                         CompiledExpr paramExpr = paramsIt.next();
-                        Object param = evalExpr(paramExpr, bin, env);
+                        Object param = evalExpr(paramExpr, src, env);
                         params.add(param);
                         paramTypes.add(param.getClass());
                     }
                 }
-                params.add(bin);
+                params.add(src);
                 params.add(env);
-                paramTypes.add(ScriptBin.class);
+                paramTypes.add(ScriptSource.class);
                 paramTypes.add(Env.class);
                 String realId = SHELLOID_PREFIX + id;
                 MethodType methodType = MethodType.methodType(Object.class, paramTypes);
@@ -210,7 +209,7 @@ public class Interpreter {
                 }catch(NoSuchMethodException e)
                 {
                     throw new InterpreterException(objExpr.getSrcCtx(), 
-                                                    "No such method: " + id, e);
+                                              "No such method: " + id + ": " + e.getMessage(), e);
                 }
                 catch(IllegalAccessException e)
                 {
@@ -237,7 +236,7 @@ public class Interpreter {
     }
     
     public Object evalOp(String op, Object leval, Object reval, 
-                            ScriptBin bin, Env env) throws InterpreterException
+                            ScriptSource src, Env env) throws InterpreterException
     {
         if(leval instanceof Long && reval instanceof Long)
         {

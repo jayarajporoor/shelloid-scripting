@@ -11,6 +11,7 @@ import com.shelloid.script.Env;
 import com.shelloid.script.Interpreter;
 import com.shelloid.script.InterpreterException;
 import com.shelloid.script.ScriptBin;
+import com.shelloid.script.ScriptSource;
 import com.shelloid.script.ShelloidObject;
 import java.util.ArrayList;
 
@@ -20,11 +21,11 @@ import java.util.ArrayList;
  */
 public class ImplicitObject implements ShelloidObject{
     public Object $if(Boolean cond, CompiledScript ifScript, CompiledScript elseScript,
-            ScriptBin bin, Env env) throws InterpreterException
+            ScriptSource src, Env env) throws InterpreterException
     {
         CompiledScript script = cond ? ifScript : elseScript;
         Env newEnv = new Env(env);
-        Interpreter.getInstance().executeScript(script, bin, newEnv);
+        Interpreter.getInstance().execute(script, src, newEnv);
         return null;
     }   
     
