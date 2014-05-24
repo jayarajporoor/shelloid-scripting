@@ -6,13 +6,14 @@
 
 package com.shelloid.script;
 
+import java.io.Serializable;
 import org.antlr.v4.runtime.Token;
 
 /**
  *
  * @author Jayaraj Poroor
  */
-public class SourceCtx {
+public class SourceCtx implements Serializable{
     private TokenInfo start;
     private TokenInfo end;
     

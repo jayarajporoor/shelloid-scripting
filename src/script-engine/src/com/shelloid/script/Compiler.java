@@ -16,6 +16,7 @@ import com.shelloid.script.parser.ShelloidParser.MethodCallContext;
 import com.shelloid.script.parser.ShelloidParser.ObjExprContext;
 import com.shelloid.script.parser.ShelloidParser.ObjExprSeqContext;
 import com.shelloid.script.parser.ShelloidParser.ParamListContext;
+import com.shelloid.script.parser.ShelloidParser.ReturnStmtContext;
 import com.shelloid.script.parser.ShelloidParser.ScriptContext;
 import com.shelloid.script.parser.ShelloidParser.StmtContext;
 import java.io.IOException;
@@ -91,6 +92,7 @@ public class Compiler {
         AssignStmtContext assignStmt = stmt.assignStmt();
         DeclStmtContext   declStmt   = stmt.declStmt();
         ExprStmtContext   exprStmt   = stmt.exprStmt();
+        ReturnStmtContext retStmt    = stmt.returnStmt();
         ExprContext       expr = null;
         if(assignStmt != null)
         {
@@ -129,7 +131,13 @@ public class Compiler {
         {
             cstmt.kind = CompiledStmt.StmtKind.EXPR_STMT;
             expr = exprStmt.expr();
+        }else
+        if(retStmt != null)
+        {
+            cstmt.kind = CompiledStmt.StmtKind.RET_STMT;
+            expr = retStmt.expr();
         }
+            
         
         if(expr != null)
         {

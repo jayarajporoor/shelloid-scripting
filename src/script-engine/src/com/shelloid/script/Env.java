@@ -39,6 +39,11 @@ public class Env {
     {
         return this.vars.containsKey(var);
     }
+    
+    public Object getVarDirect(String var)
+    {
+        return this.vars.get(var);
+    }
 
     public Object getVar(String var)
     {

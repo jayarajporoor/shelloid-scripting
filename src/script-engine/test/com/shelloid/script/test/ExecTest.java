@@ -99,6 +99,23 @@ public class ExecTest {
         assert(env.getVar("count").equals(200L));
     }
 
+    @Test
+    public void testRunNoArgsMethodReflection() throws Exception
+    {
+        Interpreter.useReflection();
+        HashMap<String, Object> globals = new HashMap<String, Object>();
+        globals.put("page", new ShowMethodObject());
+        Compiler compiler = new Compiler();
+        String ssrc = "var count = 0; var s = \"\"; page.show(); count = page.count;";
+        ByteArrayInputStream is = new ByteArrayInputStream(ssrc.getBytes());
+        ScriptSource src = new ScriptSource();
+        ScriptBin bin = compiler.compile(is, src, globals);
+        Interpreter interp = Interpreter.getInstance();
+        Env env = interp.execute(bin.getScript(), globals);
+        assert(env.getVar("count").equals(200L));
+        Interpreter.useDirect();
+    }
+    
     public class SyncExecObject implements ShelloidObject
     {
             public Object $exec(CompiledScript script, ScriptSource src, Env env) throws Exception{

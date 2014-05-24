@@ -9,6 +9,8 @@ package com.shelloid.script;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -22,11 +24,22 @@ public class Interpreter {
     static Interpreter instance = new Interpreter();
     static final String implicit = "$implicit";
     public static final String SHELLOID_PREFIX = "$";
-    
+    private static boolean useReflection = false;
+        
     private Interpreter()
     {
-    }
+    }        
     
+    public static void useReflection()
+    {
+        useReflection = true;
+    }    
+
+    public static void useDirect()
+    {
+        useReflection = false;
+    }    
+
     public static Interpreter getInstance(){
         return instance;
     }
@@ -39,7 +52,7 @@ public class Interpreter {
         return env;
     }
     
-    public void execute(CompiledScript script, ScriptSource src, Env env) throws InterpreterException
+    public Object execute(CompiledScript script, ScriptSource src, Env env) throws InterpreterException
     {
         Iterator<CompiledStmt> it = script.getStmts().iterator();
         while(it.hasNext())
@@ -47,6 +60,8 @@ public class Interpreter {
             CompiledStmt stmt = it.next();
             executeStmt(stmt, src, env);
         }
+        Object ret = env.getVarDirect("$ret");
+        return ret;
     }
     
     public void executeStmt(CompiledStmt stmt, ScriptSource src, Env env) throws InterpreterException
@@ -74,6 +89,11 @@ public class Interpreter {
                             "Attempt to assign undefined variable: " + stmt.id);
                 }
                 break;
+            case RET_STMT:
+                result = evalExpr(stmt.expr, src, env);
+                env.addVar("$ret", result);
+                break;
+                
             case EXPR_STMT:
                 evalExpr(stmt.expr, src, env);
                 break;
@@ -110,8 +130,43 @@ public class Interpreter {
         }
     }
 
-    static MethodType fieldAccessMethodType = null;
+    static Object fieldAccessMethodType = null;
+    static Class[] noParams = {};
     
+    public Object invokeFieldGetter(String id, Object obj) throws Throwable
+    {
+        String methodName = "$get_" + id;        
+        if(useReflection)
+        {
+            Method method = obj.getClass().getDeclaredMethod(methodName, noParams);
+            return method.invoke(obj);            
+        }else
+        {
+            if (fieldAccessMethodType == null) {
+                fieldAccessMethodType = MethodType.methodType(Object.class);
+            }
+            MethodHandle methodHandle = MethodHandles.lookup().findVirtual(obj.getClass(), methodName,
+                    (MethodType) fieldAccessMethodType);
+
+            return methodHandle.invoke(obj);
+        }
+    }
+    
+    public Object invokeMethod(String id, Object obj, ArrayList<Class<?> > paramTypes, 
+            ArrayList<Object> params) throws Throwable
+    {
+        String methodName =  SHELLOID_PREFIX + id;
+        if(useReflection)
+        {
+            Method method = obj.getClass().getDeclaredMethod(methodName, paramTypes.toArray(noParams));
+            return method.invoke(obj, params.toArray());            
+        }else
+        {
+            MethodType methodType = MethodType.methodType(Object.class, paramTypes);
+            MethodHandle methodHandle = MethodHandles.lookup().findVirtual(obj.getClass(), methodName, methodType);
+            return methodHandle.invokeWithArguments(params);            
+        }
+    }
     public Object evalObjExprSeq(CompiledExpr expr, ScriptSource src, Env env) 
                                                     throws InterpreterException
     {
@@ -147,15 +202,7 @@ public class Interpreter {
                 {
                     try
                     {
-                        String realId = "$get_" + id;
-                        if(fieldAccessMethodType == null)
-                        {
-                            fieldAccessMethodType = MethodType.methodType(Object.class);
-                        }
-                        MethodHandle methodHandle = MethodHandles.lookup().findVirtual
-                                                (obj.getClass(), realId, fieldAccessMethodType);
-                        
-                        obj = methodHandle.invoke(obj);
+                        obj = invokeFieldGetter(id, obj);
                     }
                     catch(NoSuchMethodException e)
                     {
@@ -185,7 +232,10 @@ public class Interpreter {
                 }
                 ArrayList<Object> params = new ArrayList<>();
                 ArrayList<Class<?> > paramTypes = new ArrayList<>();
-                params.add(obj);//first the target object for method invocation
+                if(!useReflection)
+                {
+                    params.add(obj);//first the target object for method invocation
+                }
                 if(objExpr.params != null)
                 {
                     Iterator<CompiledExpr> paramsIt = objExpr.params.iterator();
@@ -200,12 +250,9 @@ public class Interpreter {
                 params.add(env);
                 paramTypes.add(ScriptSource.class);
                 paramTypes.add(Env.class);
-                String realId = SHELLOID_PREFIX + id;
-                MethodType methodType = MethodType.methodType(Object.class, paramTypes);
+
                 try{
-                    MethodHandle methodHandle = MethodHandles.lookup().findVirtual
-                                                (obj.getClass(), realId, methodType);
-                    return methodHandle.invokeWithArguments(params);
+                    return invokeMethod(id, obj, paramTypes, params);
                 }catch(NoSuchMethodException e)
                 {
                     throw new InterpreterException(objExpr.getSrcCtx(), 

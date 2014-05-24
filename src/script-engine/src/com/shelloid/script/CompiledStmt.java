@@ -12,7 +12,7 @@ package com.shelloid.script;
  */
 class CompiledStmt extends CompiledObject {
 
-    enum StmtKind {ASSIGN_STMT, DECL_STMT, EXPR_STMT};
+    enum StmtKind {ASSIGN_STMT, DECL_STMT, EXPR_STMT, RET_STMT};
     StmtKind kind;
     String   id;
     CompiledExpr expr; 

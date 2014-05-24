@@ -28,5 +28,11 @@ public class ImplicitObject implements ShelloidObject{
         Interpreter.getInstance().execute(script, src, newEnv);
         return null;
     }   
+
+    public Object $exec(CompiledScript script, ScriptSource src, Env env) throws InterpreterException
+    {
+        Env newEnv = new Env(env);
+        return Interpreter.getInstance().execute(script, src, newEnv);
+    }   
     
 }
