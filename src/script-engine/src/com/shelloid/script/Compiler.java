@@ -180,13 +180,21 @@ public class Compiler {
         }
         else
         {
-            CompiledExpr cexpr = new CompiledExpr(new SourceCtx(expr.start, expr.stop));            
-            cexpr.kind = CompiledExpr.ExprKind.OP_EXPR;
-            cexpr.value = expr.op.getText();
-            cexpr.lexpr = translateExpr(expr.expr(0), ctx);
-            if(expr.expr().size() > 1)
-                cexpr.rexpr = translateExpr(expr.expr(1), ctx);
-            return cexpr;
+            if(expr.op != null)
+            {
+                CompiledExpr cexpr = new CompiledExpr(new SourceCtx(expr.start, expr.stop));                 
+                cexpr.kind = CompiledExpr.ExprKind.OP_EXPR;
+                cexpr.value = expr.op.getText();
+                cexpr.lexpr = translateExpr(expr.expr(0), ctx);
+                if(expr.expr().size() > 1)
+                {
+                    cexpr.rexpr = translateExpr(expr.expr(1), ctx);
+                }
+                return cexpr;
+            }else
+            {
+                return translateExpr(expr.expr(0), ctx);
+            }
         }
     }
     
